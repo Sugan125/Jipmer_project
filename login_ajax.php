@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-include("db.php"); // db.php already has session_start()
+include("config/db.php"); // db.php already has session_start()
 
 // Safely get POST variables
 $username = $_POST['username'] ?? '';

@@ -1,5 +1,5 @@
 <?php
-include("db.php");
+include("config/db.php");
 
 // Start session safely
 if (session_status() == PHP_SESSION_NONE) session_start();
@@ -26,7 +26,7 @@ $username = $_SESSION['username'];
 </head>
 <body class="bg-light">
 
-<?php include 'header.php'; ?>
+<?php include 'header/header.php'; ?>
 
 <div class="container mt-4">
     <h4>WELCOME, <span class="text-primary"><?= ucfirst(htmlspecialchars($username)) ?></span></h4>
@@ -35,7 +35,7 @@ $username = $_SESSION['username'];
 
         <!-- Bill Entry Card -->
         <div class="col-md-8 col-lg-5 d-flex">
-            <a href="bill_entry.php" class="text-decoration-none flex-fill">
+            <a href="bill_entry/bill_entry.php" class="text-decoration-none flex-fill">
                 <div class="card card-hover text-center shadow-lg rounded-4 h-100 p-5">
                     <i class="fas fa-file-invoice text-primary mb-4" style="font-size:60px;"></i>
                     <h4 class="card-title fw-bold">Bill Entry</h4>
@@ -45,7 +45,7 @@ $username = $_SESSION['username'];
 
         <!-- Voucher Entry Card -->
         <div class="col-md-8 col-lg-5 d-flex">
-            <a href="voucher_entry.php" class="text-decoration-none flex-fill">
+            <a href="voucher_entry/voucher_entry.php" class="text-decoration-none flex-fill">
                 <div class="card card-hover text-center shadow-lg rounded-4 h-100 p-5">
                     <i class="fas fa-file-alt text-success mb-4" style="font-size:60px;"></i>
                     <h4 class="card-title fw-bold">Voucher Entry</h4>
@@ -55,7 +55,7 @@ $username = $_SESSION['username'];
 
         <!-- Manage Bills Card -->
         <div class="col-md-8 col-lg-5 d-flex">
-            <a href="manage_bills.php" class="text-decoration-none flex-fill">
+            <a href="bill_entry/manage_bills.php" class="text-decoration-none flex-fill">
                 <div class="card card-hover text-center shadow-lg rounded-4 h-100 p-5">
                     <i class="fas fa-list text-warning mb-4" style="font-size:60px;"></i>
                     <h4 class="card-title fw-bold">Manage Bills</h4>
@@ -65,7 +65,7 @@ $username = $_SESSION['username'];
 
         <!-- Manage Vouchers Card -->
         <div class="col-md-8 col-lg-5 d-flex">
-            <a href="manage_vouchers.php" class="text-decoration-none flex-fill">
+            <a href="voucher_entry/manage_vouchers.php" class="text-decoration-none flex-fill">
                 <div class="card card-hover text-center shadow-lg rounded-4 h-100 p-5">
                     <i class="fas fa-receipt text-danger mb-4" style="font-size:60px;"></i>
                     <h4 class="card-title fw-bold">Manage Vouchers</h4>

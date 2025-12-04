@@ -11,7 +11,7 @@ if (!isset($_SESSION['username'])) {
     exit();
 }
 
-include __DIR__ . '/db.php';
+include '../config/db.php';
 
 $user    = $_SESSION['username'];
 $billId  = $_POST['billno'] ?? '';

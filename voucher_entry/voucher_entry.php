@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+include '../config/db.php';
 
 if (session_status() == PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION['username'])) { header('Location: login.php'); exit(); }
@@ -31,7 +31,7 @@ $billNumbers = $conn->query("SELECT Id, BillNo FROM bill_entry WHERE Status = 'P
 </head>
 <body class="bg-light">
 
-<?php include 'header.php'; ?>
+<?php include '../header/header.php'; ?>
 
 <div class="container" style="margin-top:130px;">
     <div class="text-center mb-4">

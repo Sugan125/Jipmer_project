@@ -1,5 +1,5 @@
 <?php
-include("db.php");
+include '../config/db.php';
 if (session_status() == PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION['username'])) { header("Location: login.php"); exit; }
 
@@ -19,7 +19,7 @@ $vouchers = $conn->query("
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-<?php include 'header.php'; ?>
+<?php include '../header/header.php'; ?>
 
 <div class="container mt-5">
     <h3>All Vouchers</h3>

@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+include '../config/db.php';
 if (session_status() == PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION['username'])) { header('Location: login.php'); exit(); }
 
@@ -28,7 +28,7 @@ $employees = $conn->query("SELECT Id, EmployeeName FROM employee_master")->fetch
 </head>
 <body class="bg-light">
 
-<?php include 'header.php'; ?>
+<?php include '../header/header.php'; ?>
 
 <div class="container mt-4">
     <div class="row justify-content-center">

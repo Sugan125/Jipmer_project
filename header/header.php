@@ -3,7 +3,7 @@
 
         <!-- Logo + Institute Title -->
         <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
-            <img src="logo.png" alt="JIPMER Logo" style="height:50px; margin-right: 15px;">
+            <img src="../images/logo.png" alt="JIPMER Logo" style="height:50px; margin-right: 15px;">
             <div class="d-flex flex-column">
                 <span class="fw-bold" style="font-size: 1rem;">
                     JAWAHARLAL INSTITUTE OF POSTGRADUATE MEDICAL EDUCATION AND RESEARCH
@@ -19,7 +19,7 @@
         <div class="d-flex align-items-center ms-auto">
 
             <!-- Dashboard -->
-            <a href="dashboard.php" class="btn btn-outline-primary me-2">
+            <a href="../dashboard.php" class="btn btn-outline-primary me-2">
                 <i class="fas fa-home"></i> Dashboard
             </a>
 
