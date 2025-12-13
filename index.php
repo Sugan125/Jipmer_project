@@ -3,6 +3,6 @@
 // ======================
 // index.php (Redirect to login)
 // ======================
-header('Location: login.php');
+header('Location: auth/login.php');
 exit();
 ?>

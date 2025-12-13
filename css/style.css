@@ -1,48 +1,253 @@
+/* -------------------------------------------------
+   GLOBAL STYLES
+---------------------------------------------------*/
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f2f5f7;
+    font-family: "Segoe UI", Arial, sans-serif;
 }
 
-.card {
+/* -------------------------------------------------
+   HEADER
+---------------------------------------------------*/
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
     background: #ffffff;
-    border: none;
+    z-index: 999;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    padding: 15px 0;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #0062E6, #33AEFF);
-    border: none;
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.btn-primary:hover {
-    background: linear-gradient(135deg, #0052b3, #0099ff);
-}
-/* Navbar styles */
-.navbar {
-    padding: 15px 20px;
+.header img {
+    height: 50px;
+    margin-right: 15px;
 }
 
-.navbar-brand span {
-    line-height: 1.2;
+.header a {
+    margin-left: 10px;
+    font-weight: 600;
 }
+
+/* Page content spacing below fixed header */
+.page-container {
+    margin-top: 130px;
+    margin-bottom: 40px;
+}
+
+/* -------------------------------------------------
+   LOGIN CARD
+---------------------------------------------------*/
+.login-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.login-header img {
+    height: 60px;
+    margin-bottom: 10px;
+}
+
+.login-header h5 {
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.login-header p {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Error message */
+#errorMsg {
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 10px;
+    color: red;
+}
+
+/* Inputs & Buttons */
+.form-control,
+.form-select {
+    height: 45px;
+    border-radius: 8px;
+}
+
+.btn-lg {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* -------------------------------------------------
+   CARDS (Dashboard)
+---------------------------------------------------*/
 .card-hover {
-    transition: 0.3s ease-in-out;
+    transition: 0.3s;
     cursor: pointer;
 }
 
 .card-hover:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
-        .card-title {
-            font-weight: 600;
-        }
 
-@media (max-width: 768px) {
-    .navbar-brand {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+.card-title {
+    font-size: 1.4rem;
+}
 
-    .navbar-brand img {
-        margin-bottom: 10px;
-    }
+.card h3 i {
+    color: #0d6efd;
+}
+
+/* -------------------------------------------------
+   SPACING UTILITY
+---------------------------------------------------*/
+.spacer {
+    height: 100px;
+}
+
+
+/* --- Heading --- */
+.form-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #0d6efd;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+/* --- Card Styling --- */
+.form-card {
+    border-radius: 14px;
+    padding: 25px;
+    border: 1px solid #e1e7ec;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+/* --- Input Fields --- */
+.form-control,
+.form-select {
+    height: 45px;
+    border-radius: 8px;
+    border: 1px solid #d1d9e6;
+    transition: 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.15);
+}
+
+/* --- Labels --- */
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* --- Save Button (Professional Mild Look) --- */
+.save-btn {
+    background: linear-gradient(to right, #0d6efd, #4b8dfc);
+    border: none;
+    padding: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: 0.2s ease;
+}
+
+.save-btn:hover {
+    background: linear-gradient(to right, #0b5ed7, #3a7cec);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13,110,253,0.25);
+}
+
+.save-btn i {
+    font-size: 1rem;
+}
+
+/* Page top spacing */
+.page-container {
+    margin-top: 40px;
+}
+
+/* Soft page background */
+.soft-bg {
+    background: #f7f9fc;
+}
+
+/* Card style */
+.employee-form-card {
+    border-radius: 18px;
+    border: none;
+    background: #ffffff;
+}
+
+/* Header with pastel color */
+.soft-header {
+    background: linear-gradient(135deg, #c9e7ff, #e4f3ff);
+    color: #003f5c;
+    font-weight: 600;
+    border-radius: 18px 18px 0 0 !important;
+    padding: 18px;
+}
+
+/* Soft inputs */
+.soft-input {
+    border-radius: 10px;
+    border: 1px solid #d5e3f0;
+    background: #f9fcff;
+    transition: 0.2s;
+}
+
+.soft-input:focus {
+    border-color: #86b9e0;
+    box-shadow: 0 0 0 0.15rem rgba(150, 195, 230, 0.4);
+}
+
+/* Soft button */
+.soft-btn {
+    background: #9fd3ff;
+    color: #00334d;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    transition: 0.3s;
+}
+
+.soft-btn:hover {
+    background: #7bc2ff;
+}
+.hoa-form-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    border-top: 5px solid #b39ddb; /* soft violet */
+}
+
+.hoa-header {
+    background: #b39ddb;
+    color:#fff;
+    padding:12px 15px;
+    border-radius:10px 10px 0 0;
 }
