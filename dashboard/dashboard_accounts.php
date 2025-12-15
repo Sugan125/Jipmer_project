@@ -18,7 +18,8 @@ $username = $_SESSION['username'];
 </head>
 <body>
 
-<?php include '../header/header_accounts.php'; ?>
+<?php include '../layout/topbar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="container mt-4">
     <h3 class="mb-4 text-center">Accounts Section Dashboard</h3>

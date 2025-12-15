@@ -1,7 +1,27 @@
 <?php
-include '../../config/db.php';
-include '../../includes/auth.php';
-require_role(4);
+session_start();
+include __DIR__ . '/../../config/db.php';
+if (!isset($_SESSION['role'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
+
+$page = basename($_SERVER['PHP_SELF']);
+
+$stmt = $conn->prepare("
+    SELECT COUNT(*)
+    FROM menu_master m
+    JOIN role_menu_permission rmp ON m.MenuId = rmp.MenuId
+    WHERE rmp.RoleId = ?
+      AND m.PageUrl LIKE ?
+      AND rmp.Status = 1
+");
+$stmt->execute([$_SESSION['role'], "%$page%"]);
+
+if ($stmt->fetchColumn() == 0) {
+    die("Unauthorized Access");
+}
+
 
 $types = $conn->query("SELECT * FROM bill_type_master ORDER BY BillType")->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -59,7 +79,26 @@ $types = $conn->query("SELECT * FROM bill_type_master ORDER BY BillType")->fetch
 
 <body>
 
-<?php include '../../header/header_admin.php'; ?>
+<?php
+$topbar = realpath(__DIR__ . '/../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/layout/topbar.php');
+
+$sidebar = realpath(__DIR__ . '/../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/layout/sidebar.php');
+
+if (!$topbar || !$sidebar) {
+    die('Layout files not found. Please check folder structure.');
+}
+
+require $topbar;
+require $sidebar;
+?>
 
 <div class="container mt-5">
 

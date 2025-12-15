@@ -19,7 +19,8 @@ $username = $_SESSION['username'];
 <body>
 
 
-<?php include '../header/header_receiving.php'; ?>
+<?php include '../layout/topbar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="container mt-4">
     <h3 class="mb-4 text-center">Bill Entry Section Dashboard</h3>

@@ -33,7 +33,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 4) {
 </head>
 
 <body class="bg-light">
-<?php include '../header/header_admin.php'; ?>
+<?php include '../layout/topbar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="container mt-4">
     <h3 class="text-center">Admin Dashboard</h3>

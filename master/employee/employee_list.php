@@ -2,10 +2,25 @@
 session_start();
 include '../../config/db.php';
 
-// Role 4 only (admin)
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 4) {
-    header("Location: ../../auth/login.php");
+if (!isset($_SESSION['role'])) {
+    header("Location: ../auth/login.php");
     exit;
+}
+
+$page = basename($_SERVER['PHP_SELF']);
+
+$stmt = $conn->prepare("
+    SELECT COUNT(*)
+    FROM menu_master m
+    JOIN role_menu_permission rmp ON m.MenuId = rmp.MenuId
+    WHERE rmp.RoleId = ?
+      AND m.PageUrl LIKE ?
+      AND rmp.Status = 1
+");
+$stmt->execute([$_SESSION['role'], "%$page%"]);
+
+if ($stmt->fetchColumn() == 0) {
+    die("Unauthorized Access");
 }
 
 // Fetch roles for edit dropdown
@@ -14,7 +29,8 @@ $roles = $conn->query("SELECT * FROM roles ORDER BY RoleName")->fetchAll(PDO::FE
 // Fetch employees (you may want to exclude super admin etc.)
 $employees = $conn->query("SELECT Id,EmpCode, EmployeeName, Username, RoleId FROM employee_master ORDER BY EmployeeName")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<?php include '../../header/header_admin.php'; ?>
+<?php include __DIR__ . '../layout/topbar.php'; ?>
+<?php include __DIR__ . '../layout/sidebar.php'; ?>
 
 <link rel="stylesheet" href="../../css/bootstrap.min.css">
 <link rel="stylesheet" href="../../css/all.min.css">

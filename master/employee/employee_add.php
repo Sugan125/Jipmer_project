@@ -1,35 +1,35 @@
 <?php
 session_start();
-include '../../config/db.php';
+include __DIR__ . '/../../config/db.php'; // db + BASE_URL
+$page = basename($_SERVER['PHP_SELF']);
 
-// Role 4 only
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 4) {
-    header("Location: ../../auth/login.php");
-    exit;
-}
+// Permission check
+$stmt = $conn->prepare("
+    SELECT COUNT(*) 
+    FROM menu_master m
+    JOIN role_menu_permission rmp ON m.MenuId = rmp.MenuId
+    WHERE rmp.RoleId = ? AND m.PageUrl LIKE ? AND rmp.Status = 1
+");
+$stmt->execute([$_SESSION['role'], "%$page%"]);
+if ($stmt->fetchColumn() == 0) die("Unauthorized Access");
 
 // Fetch roles
-$roles = $conn->query("SELECT * FROM roles")->fetchAll(PDO::FETCH_ASSOC);
+$roles = $conn->query("SELECT * FROM roles ORDER BY RoleId")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title>Add Employee</title>
-
-    <!-- Bootstrap & Icons -->
-    <link rel="stylesheet" href="../../css/bootstrap.min.css">
-    <link rel="stylesheet" href="../../css/all.min.css">
-
-    <!-- Custom soft-theme styles -->
-    <link rel="stylesheet" href="../../css/style.css">
-
-    <script src="../../js/jquery-3.7.1.min.js"></script>
-    <script src="../../js/bootstrap/bootstrap.bundle.min.js"></script>
-    <script src="../../js/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="<?= BASE_URL ?>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/css/all.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/css/style.css">
+    <script src="<?= BASE_URL ?>/js/jquery-3.7.1.min.js"></script>
+    <script src="<?= BASE_URL ?>/js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>/js/sweetalert2.all.min.js"></script>
 </head>
-
 <body class="soft-bg">
-<?php include '../../header/header_admin.php'; ?>
+<?php include __DIR__ . '/../../layout/topbar.php'; ?>
+<?php include __DIR__ . '/../../layout/sidebar.php'; ?>
 
 <div class="container mt-5">
     <div class="row justify-content-center">

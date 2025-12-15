@@ -1,7 +1,18 @@
 <?php
 include '../config/db.php';
 include '../includes/auth.php';
-require_role(2);
+$page = basename($_SERVER['PHP_SELF']);
+$stmt = $conn->prepare("
+    SELECT COUNT(*)
+    FROM menu_master m
+    JOIN role_menu_permission rmp ON m.MenuId = rmp.MenuId
+    WHERE rmp.RoleId = ? AND m.PageUrl LIKE ? AND rmp.Status = 1
+");
+$stmt->execute([$_SESSION['role'], "%$page%"]);
+if ($stmt->fetchColumn() == 0) {
+    die("Unauthorized Access");
+}
+
 
 $billId = intval($_POST['bill_id'] ?? 0);
 if (!$billId) { header('Location: process_list.php'); exit; }
@@ -15,7 +26,8 @@ if (!$bill) { header('Location: process_list.php'); exit; }
 $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1 ORDER BY FinYear DESC")
 ->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<?php include '../header/header_processing.php'; ?>
+<?php include '../layout/topbar.php'; ?>
+<?php include '../layout/sidebar.php'; ?>
 
 <div class="container mt-4">
     <div class="card shadow rounded">

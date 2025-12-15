@@ -5,7 +5,30 @@ body {
     background-color: #f2f5f7;
     font-family: "Segoe UI", Arial, sans-serif;
 }
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+}
+#sidebarMenu {
+    width: 240px;
+    height: 100vh; /* Full viewport height */
+    position: fixed;
+    top: 0; /* Adjust if topbar exists, e.g., top: 80px */
+    left: 0;
+    background-color: #343a40;
+    overflow-y: auto; /* Scroll if menu exceeds viewport */
+    z-index: 1000;
+    padding-top: 80px; /* If you have a fixed topbar of height 80px */
+}
 
+#sidebarMenu .nav-link {
+    color: #fff;
+}
+
+#sidebarMenu .nav-link:hover {
+    background-color: #495057;
+}
 /* -------------------------------------------------
    HEADER
 ---------------------------------------------------*/
