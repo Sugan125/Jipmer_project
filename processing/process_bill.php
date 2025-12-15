@@ -31,15 +31,30 @@ $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1
                 <div class="mb-3"><strong>Received:</strong> <?= date('d/m/Y', strtotime($bill['BillReceivedDate'])) ?></div>
 
                 <!-- Financial Year -->
-                <div class="mb-3">
-                    <label class="form-label">Financial Year</label>
-                    <select name="financial_year" class="form-select" required>
-                    <?php foreach($finYears as $fy): ?>
-                    <option value="<?= $fy['Id'] ?>"><?= $fy['FinYear'] ?></option>
-                    <?php endforeach; ?>
-                    </select>
+             <div class="mb-3">
+    <label class="form-label">Financial Year</label>
+    <select name="financial_year"  id="financial_year" class="form-select" required>
+        <?php 
+        $currentYear = date('Y');
+        $currentMonth = date('n');
 
-                </div>
+        // Indian Financial Year logic (Apr–Mar)
+        if ($currentMonth >= 4) {
+            $currentFY = $currentYear . '-' . ($currentYear + 1);
+        } else {
+            $currentFY = ($currentYear - 1) . '-' . $currentYear;
+        }
+        ?>
+
+        <?php foreach ($finYears as $fy): ?>
+        <option value="<?= $fy['Id'] ?>"
+            <?= ($fy['FinYear'] == $currentFY) ? 'selected' : '' ?>>
+            <?= $fy['FinYear'] ?>
+        </option>
+    <?php endforeach; ?>
+    </select>
+</div>
+
 
                 <!-- HOA -->
                 <div class="mb-3">
@@ -136,12 +151,11 @@ $(document).ready(function(){
             }
         });
     }
-
+console.log($('#financial_year').val());
     // Load HOA on page load
     loadHOA($('#financial_year').val());
+$('#financial_year').on('change', function(){
 
-    // Load HOA when Financial Year changes
-    $('#financial_year').on('change', function(){
         loadHOA($(this).val());
     });
 

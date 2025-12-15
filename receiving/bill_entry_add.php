@@ -6,7 +6,7 @@ require_role(1); // receiving only
 $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=1 and RoleId = 2 ORDER BY EmployeeName")
              ->fetchAll(PDO::FETCH_ASSOC);
 
-$bill_type = $conn->query("SELECT Id, BillType FROM bill_type_master WHERE Status=1 ORDER BY BillType")
+$bill_type = $conn->query("SELECT Id, BillType FROM bill_type_master WHERE Status=1 and IsActive =1 ORDER BY BillType")
     ->fetchAll(PDO::FETCH_ASSOC);
 
     $credit = $conn->query("SELECT Id, CreditName FROM account_credit_master WHERE Status=1")->fetchAll();

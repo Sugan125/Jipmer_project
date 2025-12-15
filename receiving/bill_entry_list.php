@@ -48,6 +48,7 @@ $rows = $conn->query("
                     <th>From Section</th>
                     <th>Alloted To</th>
                     <th>Status</th>
+                    <th>History</th>
                     <!-- <th class="text-center">Actions</th> -->
                 </tr>
             </thead>
@@ -61,6 +62,12 @@ $rows = $conn->query("
                     <td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
                     <td><?= htmlspecialchars($r['AllotedName']) ?></td>
                     <td><?= htmlspecialchars($r['Status']) ?></td>
+                    <td class="text-center">
+                        <a href="bill_history.php?id=<?= $r['Id'] ?>" 
+                        class="btn btn-sm btn-info">
+                        📜 History
+                        </a>
+                    </td>
 
                     <!-- <td class="text-center">
                         <a class="btn btn-sm btn-primary" 

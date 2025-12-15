@@ -8,7 +8,7 @@ $rows = $conn->query("
     SELECT b.Id, b.BillNo, p.TotalAmount
     FROM bill_entry b
     LEFT JOIN bill_process p ON p.BillId = b.Id
-    WHERE b.Status='Pass'
+    WHERE b.Status='Pass' and p.Status = 'Pass'
     AND NOT EXISTS (SELECT 1 FROM bill_transactions t WHERE t.BillId = b.Id)
     ORDER BY b.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);

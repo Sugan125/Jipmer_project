@@ -3,6 +3,12 @@ include '../../config/db.php';
 include '../../includes/auth.php';
 require_role(4);
 
-$id = intval($_GET['id']);
-$conn->prepare("DELETE FROM account_credit_master WHERE Id=?")->execute([$id]);
-header('Location: credit_master.php');
+$id = intval($_GET['id'] ?? 0);
+if ($id <= 0) exit;
+
+try {
+    $stmt = $conn->prepare("DELETE FROM account_credit_master WHERE Id=?");
+    $stmt->execute([$id]);
+} catch (PDOException $e) {
+    exit("Error deleting credit: ".$e->getMessage());
+}

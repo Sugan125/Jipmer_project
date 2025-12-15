@@ -40,5 +40,8 @@ $stmt->execute([
     $_SERVER['REMOTE_ADDR']
 ]);
 
+$update = $conn->prepare("UPDATE bill_entry SET Status='Voucher Done' WHERE Id=?");
+$update->execute([$billId]);
+
 echo json_encode(['status' => 'success', 'message' => 'Voucher has been saved successfully.']);
 exit;
