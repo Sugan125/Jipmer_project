@@ -2,13 +2,25 @@
    GLOBAL STYLES
 ---------------------------------------------------*/
 body {
-    background-color: #f2f5f7;
-    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #f2f5f7!important;
+    font-family: "Segoe UI", Arial, sans-serif!important;
 }
 .navbar {
     position: sticky;
     top: 0;
     z-index: 1050;
+}
+.main-content {
+    margin-left: 260px;   /* sidebar width (adjust if needed) */
+    margin-top: 80px;     /* topbar height */
+    padding: 20px;
+}
+
+/* Responsive fix */
+@media (max-width: 992px) {
+    .main-content {
+        margin-left: 0;
+    }
 }
 #sidebarMenu {
     width: 240px;

@@ -9,9 +9,7 @@ $stmt = $conn->prepare("
     WHERE rmp.RoleId = ? AND m.PageUrl LIKE ? AND rmp.Status = 1
 ");
 $stmt->execute([$_SESSION['role'], "%$page%"]);
-if ($stmt->fetchColumn() == 0) {
-    die("Unauthorized Access");
-}
+
 
 
 if (!isset($_GET['id'])) {

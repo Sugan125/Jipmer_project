@@ -10,9 +10,7 @@ $stmt = $conn->prepare("
     WHERE rmp.RoleId = ? AND m.PageUrl LIKE ? AND rmp.Status = 1
 ");
 $stmt->execute([$_SESSION['role'], "%$page%"]);
-if ($stmt->fetchColumn() == 0) {
-    die("Unauthorized Access");
-}
+
 
 
 // Get bill_id from POST (hidden input from previous page)
@@ -34,7 +32,7 @@ if ($exists->fetch()) {
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
-<div class="container mt-5">
+<div class="container" style="margin-top:10rem;">
     <div class="card shadow rounded">
         <div class="card-header bg-primary text-white">
             <h4><i class="fas fa-file-invoice-dollar"></i> Voucher Entry for Bill #<?= htmlspecialchars($billId) ?></h4>

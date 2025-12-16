@@ -35,7 +35,6 @@ $rows = $conn->query("
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="../js/datatables/buttons.dataTables.min.css">
 
     <!-- Custom Style -->
     <link rel="stylesheet" href="../css/style.css">

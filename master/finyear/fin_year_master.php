@@ -34,6 +34,7 @@ foreach ($years as $y) {
 
 <link rel="stylesheet" href="../../css/bootstrap.min.css">
 <link rel="stylesheet" href="../../css/all.min.css">
+   <link rel="stylesheet" href="../../css/style.css">
 <style>
 body { background:#f4f6fb; }
 

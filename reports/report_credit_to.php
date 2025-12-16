@@ -45,11 +45,13 @@ $rows = $conn->query("
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Credit To Report</title>
 
-<link rel="stylesheet" href="../../css/bootstrap.min.css">
-<link rel="stylesheet" href="../../css/all.min.css">
-<link rel="stylesheet" href="../../css/style.css">
-<link rel="stylesheet" href="../../js/datatables/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="../../js/datatables/buttons.dataTables.min.css">
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/all.min.css">
+<link rel="stylesheet" href="../css/style.css">
+
+<link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="../js/datatables/buttons.bootstrap5.min.css">
+
 
 <style>
 /* Unique report style */
@@ -118,17 +120,22 @@ $rows = $conn->query("
     </div>
 </div>
 
-<!-- JS Libraries -->
-<script src="../../js/jquery-3.7.1.min.js"></script>
-<script src="../../js/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../../js/datatables/jquery.dataTables.min.js"></script>
-<script src="../../js/datatables/dataTables.bootstrap5.min.js"></script>
-<script src="../../js/datatables/dataTables.buttons.min.js"></script>
-<script src="../../js/datatables/jszip.min.js"></script>
-<script src="../../js/datatables/pdfmake.min.js"></script>
-<script src="../../js/datatables/vfs_fonts.js"></script>
-<script src="../../js/datatables/buttons.html5.min.js"></script>
-<script src="../../js/datatables/buttons.print.min.js"></script>
+<script src="../js/jquery-3.7.1.min.js"></script>
+<script src="../js/bootstrap/bootstrap.bundle.min.js"></script>
+
+<script src="../js/datatables/jquery.dataTables.min.js"></script>
+<script src="../js/datatables/dataTables.bootstrap5.min.js"></script>
+
+<script src="../js/datatables/dataTables.buttons.min.js"></script>
+<script src="../js/datatables/buttons.bootstrap5.min.js"></script>
+
+<script src="../js/datatables/jszip.min.js"></script>
+<script src="../js/datatables/pdfmake.min.js"></script>
+<script src="../js/datatables/vfs_fonts.js"></script>
+
+<script src="../js/datatables/buttons.html5.min.js"></script>
+<script src="../js/datatables/buttons.print.min.js"></script>
+
 
 <script>
 $(document).ready(function(){

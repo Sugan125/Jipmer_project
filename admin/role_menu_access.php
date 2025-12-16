@@ -8,7 +8,7 @@ $roles = $conn->query("SELECT RoleId, RoleName FROM roles ORDER BY RoleName")
               ->fetchAll(PDO::FETCH_ASSOC);
 
 /* Fetch menus */
-$menus = $conn->query("SELECT MenuId, MenuName FROM menu_master WHERE Status = 1 ORDER BY MenuName")
+$menusfinal = $conn->query("SELECT MenuId, MenuName FROM menu_master WHERE Status = 1 ORDER BY MenuName")
               ->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -25,7 +25,7 @@ $menus = $conn->query("SELECT MenuId, MenuName FROM menu_master WHERE Status = 1
 
 <body>
 <?php include '../layout/topbar.php'; ?>
-
+<?php include '../layout/sidebar.php'; ?>
 <div class="container mt-4">
     <h4 class="mb-3">🔐 Role – Menu Access Control</h4>
 
@@ -46,7 +46,7 @@ $menus = $conn->query("SELECT MenuId, MenuName FROM menu_master WHERE Status = 1
 
         <form id="menuForm">
             <div class="row">
-                <?php foreach($menus as $m): ?>
+                <?php foreach($menusfinal as $m): ?>
                     <div class="col-md-4">
                         <div class="form-check">
                             <input class="form-check-input menuCheck"

@@ -29,8 +29,26 @@ $roles = $conn->query("SELECT * FROM roles ORDER BY RoleName")->fetchAll(PDO::FE
 // Fetch employees (you may want to exclude super admin etc.)
 $employees = $conn->query("SELECT Id,EmpCode, EmployeeName, Username, RoleId FROM employee_master ORDER BY EmployeeName")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<?php include __DIR__ . '../layout/topbar.php'; ?>
-<?php include __DIR__ . '../layout/sidebar.php'; ?>
+<?php
+$topbar = realpath(__DIR__ . '/../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/layout/topbar.php');
+
+$sidebar = realpath(__DIR__ . '/../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/layout/sidebar.php');
+
+if (!$topbar || !$sidebar) {
+    die('Layout files not found. Please check folder structure.');
+}
+
+require $topbar;
+require $sidebar;
+?>
 
 <link rel="stylesheet" href="../../css/bootstrap.min.css">
 <link rel="stylesheet" href="../../css/all.min.css">
@@ -50,7 +68,7 @@ $employees = $conn->query("SELECT Id,EmpCode, EmployeeName, Username, RoleId FRO
         <a href="employee_add.php" class="btn btn-primary btn-sm ms-3">➕ Add Employee</a>
     </div>
 
-    <div class="table-responsive shadow-sm rounded">
+    <div class="table-responsive shadow-sm rounded bg-white p-3">
         <table id="employeesTable" class="table table-striped table-hover align-middle">
             <thead class="table-light">
                 <tr>

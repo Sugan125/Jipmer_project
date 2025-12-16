@@ -28,10 +28,31 @@ $stmt = $conn->prepare("
 $stmt->execute(['user_id' => $userId]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Transaction / Batch Entry</title>
+
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/all.min.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
+
+<style>
+body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
+.topbar-fixed { position: fixed; top: 0; width: 100%; z-index: 1030; }
+.sidebar-fixed { position: fixed; top: 70px; bottom: 0; width: 240px; overflow-y: auto; background-color: #343a40; }
+.page-content { margin-left: 240px; padding: 150px 20px 20px 20px; }
+.table-responsive { max-width: 1000px; margin: auto; }
+</style>
+</head>
+<body>
+
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
-<div class="container mt-5">
+<div class="page-content">
     <h3 class="mb-4 text-center">Bills to Process</h3>
 
     <div class="table-responsive shadow rounded">

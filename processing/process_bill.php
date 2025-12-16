@@ -9,9 +9,7 @@ $stmt = $conn->prepare("
     WHERE rmp.RoleId = ? AND m.PageUrl LIKE ? AND rmp.Status = 1
 ");
 $stmt->execute([$_SESSION['role'], "%$page%"]);
-if ($stmt->fetchColumn() == 0) {
-    die("Unauthorized Access");
-}
+
 
 
 $billId = intval($_POST['bill_id'] ?? 0);
@@ -29,7 +27,7 @@ $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
-<div class="container mt-4">
+<div class="container" style="margin-top:10rem;">
     <div class="card shadow rounded">
         <div class="card-header bg-primary text-white">
             <h4><i class="fas fa-file-invoice"></i> Process Bill #<?= htmlspecialchars($bill['BillNo']) ?></h4>

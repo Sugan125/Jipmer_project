@@ -34,13 +34,8 @@ $types = $conn->query("SELECT * FROM bill_type_master ORDER BY BillType")->fetch
     <link rel="stylesheet" href="../../css/bootstrap.min.css">
     <link rel="stylesheet" href="../../js/datatables/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../css/all.min.css">
-
-    <!-- JS -->
-    <script src="../../js/jquery-3.7.1.min.js"></script>
-    <script src="../../js/bootstrap/bootstrap.bundle.min.js"></script>
-    <script src="../../js/datatables/jquery.dataTables.min.js"></script>
-    <script src="../../js/datatables/dataTables.bootstrap5.min.js"></script>
-    <script src="../../js/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="../../css/style.css">
+  
 
     <style>
         body {
@@ -201,7 +196,12 @@ require $sidebar;
         </form>
     </div>
 </div>
-
+  <!-- JS -->
+    <script src="../../js/jquery-3.7.1.min.js"></script>
+    <script src="../../js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="../../js/datatables/jquery.dataTables.min.js"></script>
+    <script src="../../js/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="../../js/sweetalert2.all.min.js"></script>
 <script>
 $(function(){
 
