@@ -1,11 +1,8 @@
 <?php
 session_start();
-include '../../config/db.php';
+include '../config/db.php';
 
-if(!isset($_SESSION['role']) || $_SESSION['role']!=1){
-    echo json_encode(['status'=>'error','message'=>'Unauthorized']);
-    exit;
-}
+
 
 $action = $_POST['action'] ?? '';
 
@@ -19,13 +16,31 @@ if($action=='get'){
     exit;
 }
 
-if($action=='delete'){
+if ($action == 'delete') {
     $id = intval($_POST['MenuId']);
+
+    $check = $conn->prepare("
+        SELECT COUNT(*) 
+        FROM role_menu_permission 
+        WHERE MenuId = ?
+    ");
+    $check->execute([$id]);
+
+    if ($check->fetchColumn() > 0) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Menu is assigned to roles. Cannot delete.'
+        ]);
+        exit;
+    }
+
     $stmt = $conn->prepare("DELETE FROM menu_master WHERE MenuId=?");
     $stmt->execute([$id]);
+
     echo json_encode(['status'=>'success','message'=>'Menu deleted']);
     exit;
 }
+
 
 // Add/Edit
 $MenuId = $_POST['MenuId'] ?? '';

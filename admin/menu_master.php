@@ -4,7 +4,7 @@ include '../config/db.php';
 
 
 // Fetch menus
-$menus = $conn->query("SELECT * FROM menu_master ORDER BY SortOrder ASC")->fetchAll(PDO::FETCH_ASSOC);
+$menubar = $conn->query("SELECT MenuId, MenuName, PageUrl,Status, IconClass, SortOrder FROM menu_master ORDER BY SortOrder ASC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
@@ -40,7 +40,9 @@ $menus = $conn->query("SELECT * FROM menu_master ORDER BY SortOrder ASC")->fetch
             </tr>
         </thead>
         <tbody>
-        <?php foreach($menus as $m): ?>
+        <?php foreach($menubar as $m): 
+          
+            ?>
             <tr>
                 <td><?= $m['MenuId'] ?? '' ?></td>
                 <td><?= htmlspecialchars($m['MenuName'] ?? '') ?></td>

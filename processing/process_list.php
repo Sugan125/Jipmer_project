@@ -55,7 +55,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
 <div class="page-content">
     <h3 class="mb-4 text-center">Bills to Process</h3>
 
-    <div class="table-responsive shadow rounded">
+    <div class="table-responsive shadow rounded bg-white p-3">
         <table id="billsTable" class="table table-striped table-bordered table-hover">
             <thead class="table-dark">
                 <tr>
