@@ -10,8 +10,6 @@ $stmt = $conn->prepare("
 ");
 $stmt->execute([$_SESSION['role'], "%$page%"]);
 
-
-
 $billId = intval($_POST['bill_id'] ?? 0);
 if (!$billId) { header('Location: process_list.php'); exit; }
 
@@ -22,12 +20,28 @@ $bill = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$bill) { header('Location: process_list.php'); exit; }
 
 $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1 ORDER BY FinYear DESC")
-->fetchAll(PDO::FETCH_ASSOC);
+    ->fetchAll(PDO::FETCH_ASSOC);
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Process Bill</title>
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/all.min.css">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
+.topbar-fixed { position: fixed; top: 0; width: 100%; z-index: 1030; }
+.sidebar-fixed { position: fixed; top: 70px; bottom: 0; width: 240px; overflow-y: auto; background-color: #343a40; }
+.page-content { margin-left: 240px; padding: 150px 20px 20px 20px; }
+</style>
+</head>
+<body>
+
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
-
-<div class="container" style="margin-top:10rem;">
+<div class="page-content">
     <div class="card shadow rounded">
         <div class="card-header bg-primary text-white">
             <h4><i class="fas fa-file-invoice"></i> Process Bill #<?= htmlspecialchars($bill['BillNo']) ?></h4>
@@ -36,47 +50,46 @@ $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1
             <form id="processBillForm">
                 <input type="hidden" name="bill_id" value="<?= $billId ?>">
 
-                <!-- Bill Info -->
+                      <!-- Bill Info -->
                 <div class="mb-3"><strong>Bill No:</strong> <?= htmlspecialchars($bill['BillNo']) ?></div>
                 <div class="mb-3"><strong>Received:</strong> <?= date('d/m/Y', strtotime($bill['BillReceivedDate'])) ?></div>
 
                 <!-- Financial Year -->
-             <div class="mb-3">
-    <label class="form-label">Financial Year</label>
-    <select name="financial_year"  id="financial_year" class="form-select" required>
-        <?php 
-        $currentYear = date('Y');
-        $currentMonth = date('n');
-
-        // Indian Financial Year logic (Apr–Mar)
-        if ($currentMonth >= 4) {
-            $currentFY = $currentYear . '-' . ($currentYear + 1);
-        } else {
-            $currentFY = ($currentYear - 1) . '-' . $currentYear;
-        }
-        ?>
-
-        <?php foreach ($finYears as $fy): ?>
-        <option value="<?= $fy['Id'] ?>"
-            <?= ($fy['FinYear'] == $currentFY) ? 'selected' : '' ?>>
-            <?= $fy['FinYear'] ?>
-        </option>
-    <?php endforeach; ?>
-    </select>
-</div>
-
+                <div class="mb-3">
+                    <label class="form-label">Financial Year</label>
+                    <select name="financial_year" id="financial_year" class="form-select" required>
+                        <?php 
+                        $currentYear = date('Y');
+                        $currentMonth = date('n');
+                        $currentFY = ($currentMonth >= 4) ? $currentYear.'-'.($currentYear+1) : ($currentYear-1).'-'.$currentYear;
+                        foreach ($finYears as $fy): ?>
+                        <option value="<?= $fy['Id'] ?>" <?= ($fy['FinYear']==$currentFY)?'selected':'' ?>>
+                            <?= $fy['FinYear'] ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if($_SESSION['role']==5): ?>
+                    <button type="button" class="btn btn-light border" id="addFinYearBtn"><i class="fa fa-plus text-success"></i></button>
+                    <button type="button" class="btn btn-light border" id="editFinYearBtn"><i class="fa fa-pen text-primary"></i></button>
+                    <button type="button" class="btn btn-light border" id="deleteFinYearBtn"><i class="fa fa-times text-danger"></i></button>
+                    <?php endif; ?>
+                </div>
 
                 <!-- HOA -->
                 <div class="mb-3">
                     <label class="form-label">HOA</label>
                     <select name="hoa" id="hoa" class="form-select" required>
                         <option value="">Select HOA</option>
-                        <!-- Options loaded dynamically via AJAX -->
                     </select>
+                    <!--  //if($_SESSION['role']==5): ?>
+                    <button type="button" class="btn btn-light border" id="addHoaBtn"><i class="fa fa-plus text-success"></i></button>
+                    <button type="button" class="btn btn-light border" id="editHoaBtn"><i class="fa fa-pen text-primary"></i></button>
+                    <button type="button" class="btn btn-light border" id="deleteHoaBtn"><i class="fa fa-times text-danger"></i></button>
+                     //endif; ?> -->
                 </div>
 
                 <!-- Amounts -->
-                <div class="row">
+                  <div class="row">
                     <div class="col-md-4 mb-3">
                         <label>Amount</label>
                         <input name="amount" id="amount" class="form-control" type="number" step="0.01" required>
@@ -113,13 +126,13 @@ $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1
                     <textarea name="reason" class="form-control"></textarea>
                 </div>
 
-                <!-- Remarks -->
+                <!-- Remarks -->                
                 <div class="mb-3">
                     <label>Remarks</label>
                     <textarea name="remarks" class="form-control" required></textarea>
                 </div>
 
-                <button type="submit" class="btn btn-success">
+                  <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i> Save Processing
                 </button>
             </form>
@@ -127,6 +140,31 @@ $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1
     </div>
 </div>
 
+<!-- MASTER MODAL -->
+<div class="modal fade" id="masterModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="masterForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="masterTitle">Add</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="masterId" name="id">
+          <input type="hidden" id="masterType" name="type">
+          <div class="mb-3">
+            <label class="form-label" id="masterLabel">Name</label>
+            <input type="text" id="masterName" name="name" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 <!-- JS Libraries -->
 <link rel="stylesheet" href="../css/bootstrap.min.css">
 <link rel="stylesheet" href="../css/all.min.css">
@@ -136,9 +174,7 @@ $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1
 
 <script>
 $(document).ready(function(){
-
-    // Function to load HOA based on selected Financial Year
-    function loadHOA(fy, selectedHOA = '') {
+ function loadHOA(fy, selectedHOA = '') {
         if(fy === '') {
             $('#hoa').html('<option value="">Select HOA</option>');
             return;
@@ -150,11 +186,10 @@ $(document).ready(function(){
             dataType: 'json',
             success: function(data){
                 let options = '<option value="">Select HOA</option>';
-                $.each(data, function(i, hoa){
-                    let selected = hoa.Id == selectedHOA ? 'selected' : '';
-                    options += `<option value="${hoa.Id}" ${selected}>${hoa.FullHOA}</option>`;
-                });
-                $('#hoa').html(options);
+$.each(data, function(i, hoa){
+    options += `<option value="${hoa.Id}" data-fy="${hoa.FinancialYearId}">${hoa.FullHOA}</option>`;
+});
+$('#hoa').html(options);
             },
             error: function(){
                 Swal.fire('Error', 'Could not load HOA options', 'error');
@@ -213,5 +248,97 @@ $('#financial_year').on('change', function(){
         });
     });
 
+    const masterModal = new bootstrap.Modal(document.getElementById('masterModal'), {});
+
+    function openModal(type, id='', text='', fyId='') {
+    $('#masterType').val(type);
+    $('#masterId').val(id);
+    $('#masterName').val(text);
+
+    let label = 'Name';
+    if(type === 'finyear') label = 'Financial Year';
+    if(type === 'hoa') label = 'HOA';
+
+    $('#masterLabel').text(label);
+    $('#masterTitle').text((id ? 'Edit ' : 'Add ') + label);
+
+    // Show Financial Year only for HOA
+    if(type === 'hoa') {
+        $('#modalFinYearDiv').show();
+        $('#modalFinYear').val(fyId || '');
+    } else {
+        $('#modalFinYearDiv').hide();
+        $('#modalFinYear').val('');
+    }
+
+    $('#masterModal').modal('show');
+}
+
+
+    /* Financial Year */
+    $('#addFinYearBtn').click(()=>openModal('finyear'));
+    $('#editFinYearBtn').click(()=> {
+        const id = $('#financial_year').val();
+        if(!id) return Swal.fire('Select Financial Year');
+        openModal('finyear', id, $('#financial_year option:selected').text().trim());
+    });
+
+    $('#deleteFinYearBtn').click(()=>{
+        const id = $('#financial_year').val();
+        const text = $('#financial_year option:selected').text().trim();
+        if(!id) return Swal.fire('Select Financial Year');
+        Swal.fire({
+            title: 'Delete "'+text+'"?',
+            icon: 'warning',
+            showCancelButton:true,
+            confirmButtonText:'Yes'
+        }).then(r=>{if(r.isConfirmed) $.post('master_delete_ajax.php',{id,type:'finyear'},()=>location.reload());});
+    });
+
+    /* HOA */
+    function loadHOA(fy, selectedHOA=''){
+        if(fy===''){ $('#hoa').html('<option value="">Select HOA</option>'); return; }
+        $.getJSON('get_hoa_by_fy.php',{fy:fy},data=>{
+            let opts = '<option value="">Select HOA</option>';
+            $.each(data,(i,h)=>{opts+=`<option value="${h.Id}" ${(h.Id==selectedHOA?'selected':'')}>${h.FullHOA}</option>`;});
+            $('#hoa').html(opts);
+        });
+    }
+
+    $('#addHoaBtn').click(()=>openModal('hoa'));
+   $('#editHoaBtn').click(()=> {
+    const id = $('#hoa').val();
+    if(!id) return Swal.fire('Select HOA');
+    const text = $('#hoa option:selected').text().trim();
+    const fyId = $('#hoa option:selected').data('fy'); // Store FY in option data attribute
+    openModal('hoa', id, text, fyId);
 });
+    $('#deleteHoaBtn').click(()=>{
+        const id = $('#hoa').val();
+        const text = $('#hoa option:selected').text().trim();
+        if(!id) return Swal.fire('Select HOA');
+        Swal.fire({
+            title:'Delete "'+text+'"?',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'Yes'
+        }).then(r=>{if(r.isConfirmed) $.post('master_delete_ajax.php',{id,type:'hoa'},()=>loadHOA($('#financial_year').val()));});
+    });
+
+    $('#masterForm').submit(function(e){
+        e.preventDefault();
+        $.post('master_save_ajax.php', $(this).serialize(), function(resp){
+            if(resp.status==='success'){ Swal.fire('Saved!',resp.message,'success').then(()=>location.reload()); }
+            else Swal.fire('Error',resp.message,'error');
+        },'json');
+    });
+
+    // Load HOA initially
+    loadHOA($('#financial_year').val());
+
+});
+</script>
+
+</body>
+</html>
 </script>

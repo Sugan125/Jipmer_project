@@ -17,6 +17,20 @@ if ($stmt->fetchColumn() == 0) {
 // Fetch bills with status Pending or Returned
 $userId = $_SESSION['user_id'];
 
+if($_SESSION['role'] == '5'){
+    echo 'asdgdjas';
+    $stmt = $conn->prepare("
+    SELECT b.*, e.EmployeeName AS AllotedName 
+    FROM bill_entry b
+    LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
+    WHERE b.Status IN ('Pending','Returned') 
+    ORDER BY b.CreatedDate DESC
+");
+$stmt->execute();
+
+}
+else{
+    echo 'asdgdjas';
 $stmt = $conn->prepare("
     SELECT b.*, e.EmployeeName AS AllotedName 
     FROM bill_entry b
@@ -26,6 +40,8 @@ $stmt = $conn->prepare("
     ORDER BY b.CreatedDate DESC
 ");
 $stmt->execute(['user_id' => $userId]);
+}
+
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
