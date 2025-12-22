@@ -29,11 +29,59 @@ if ($exists->fetch()) {
 }
 
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Add Bill Entry</title>
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/all.min.css">
+<link rel="stylesheet" href="../css/style.css">
+
+<style>
+body {
+    min-height: 100vh;
+    margin: 0;
+}
+
+.topbar-fixed {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1030;
+}
+
+.sidebar-fixed {
+    position: fixed;
+    top: 70px; /* height of topbar */
+    bottom: 0;
+    width: 240px;
+    overflow-y: auto;
+    background-color: #343a40;
+}
+
+.page-content {
+    margin-left: 240px; /* sidebar width */
+    padding: 50px 20px 20px 20px; /* topbar + spacing */
+    display: flex;
+    margin-top: 100px; /* sidebar width */
+    justify-content: center;
+}
+
+.form-card {
+    width: 100%;
+    max-width: 700px;
+}
+</style>
+</head>
+<body class="bg-light">
+
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
-<div class="container" style="margin-top:10rem;">
-    <div class="card shadow rounded">
+<div class="page-content">
+    <div class="card p-4 form-card shadow">
         <div class="card-header bg-primary text-white">
             <h4><i class="fas fa-file-invoice-dollar"></i> Voucher Entry for Bill #<?= htmlspecialchars($billId) ?></h4>
         </div>

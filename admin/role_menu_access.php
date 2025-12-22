@@ -14,60 +14,94 @@ $menusfinal = $conn->query("SELECT MenuId, MenuName FROM menu_master WHERE Statu
 <!DOCTYPE html>
 <html>
 <head>
-<title>Role Menu Access</title>
+    <title>Bill Type Master</title>
 
-<link rel="stylesheet" href="../css/bootstrap.min.css">
-<link rel="stylesheet" href="../css/all.min.css">
-<script src="../js/jquery-3.7.1.min.js"></script>
-<script src="../js/bootstrap/bootstrap.bundle.min.js"></script>
-<script src="../js/sweetalert2.all.min.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="../css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+  
 </head>
 
 <body>
-<?php include '../layout/topbar.php'; ?>
-<?php include '../layout/sidebar.php'; ?>
-<div class="container mt-4">
-    <h4 class="mb-3">🔐 Role – Menu Access Control</h4>
 
-    <!-- Role Selection -->
-    <div class="mb-3">
-        <label class="form-label fw-bold">Select Role</label>
-        <select id="roleId" class="form-select">
-            <option value="">-- Select Role --</option>
-            <?php foreach($roles as $r): ?>
-                <option value="<?= $r['RoleId'] ?>"><?= $r['RoleName'] ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+<?php
+$topbar = realpath(__DIR__ . '/../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/layout/topbar.php');
 
-    <!-- Menu List -->
-    <div id="menuArea" style="display:none;">
-        <h5 class="mt-4">Menus</h5>
+$sidebar = realpath(__DIR__ . '/../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/layout/sidebar.php');
 
-        <form id="menuForm">
-            <div class="row">
-                <?php foreach($menusfinal as $m): ?>
-                    <div class="col-md-4">
-                        <div class="form-check">
-                            <input class="form-check-input menuCheck"
-                                   type="checkbox"
-                                   value="<?= $m['MenuId'] ?>"
-                                   id="menu<?= $m['MenuId'] ?>">
-                            <label class="form-check-label">
-                                <?= $m['MenuName'] ?>
-                            </label>
-                        </div>
-                    </div>
+if (!$topbar || !$sidebar) {
+    die('Layout files not found. Please check folder structure.');
+}
+
+require $topbar;
+require $sidebar;
+?>
+
+<div class="container mt-5">
+
+    <div class="page-card">
+
+        <!-- HEADER -->
+        <div class="page-header">
+            <h4 class="mb-3">🔐 Role – Menu Access Control</h4>
+        </div>
+   
+
+        <!-- Role Selection -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Select Role</label>
+            <select id="roleId" class="form-select">
+                <option value="">-- Select Role --</option>
+                <?php foreach($roles as $r): ?>
+                    <option value="<?= $r['RoleId'] ?>"><?= $r['RoleName'] ?></option>
                 <?php endforeach; ?>
-            </div>
+            </select>
+        </div>
 
-            <button type="submit" class="btn btn-primary mt-3">
-                <i class="fas fa-save"></i> Save Access
-            </button>
-        </form>
+        <!-- Menu List -->
+        <div id="menuArea" style="display:none;">
+            <h5 class="mt-4">Menus</h5>
+
+            <form id="menuForm">
+                <div class="row">
+                    <?php foreach($menusfinal as $m): ?>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input class="form-check-input menuCheck"
+                                    type="checkbox"
+                                    value="<?= $m['MenuId'] ?>"
+                                    id="menu<?= $m['MenuId'] ?>">
+                                <label class="form-check-label">
+                                    <?= $m['MenuName'] ?>
+                                </label>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="fas fa-save"></i> Save Access
+                </button>
+            </form>
+        </div>
     </div>
 </div>
-
+ <!-- JS -->
+    <script src="../js/jquery-3.7.1.min.js"></script>
+    <script src="../js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="../js/datatables/jquery.dataTables.min.js"></script>
+    <script src="../js/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="../js/sweetalert2.all.min.js"></script>
 <script>
 $("#roleId").change(function(){
     let roleId = $(this).val();

@@ -17,7 +17,7 @@ $data = $_POST;
 $billno = trim($data['billno'] ?? '');
 $credit  = (int)($_POST['CreditToId'] ?? 0);
 $debit   = (int)($_POST['DebitFromId'] ?? 0);
-$billtype = trim($data['BillTypeId'] ?? '');
+$billtype = (int)($_POST['BillTypeId'] ?? 0);
 $billdate = $data['billdate'] ?? null;
 $fromsection = $data['fromsection'] ?? '';
 $sdaname = $data['sdaname'] ?? '';
@@ -25,7 +25,24 @@ $tokno = $data['tokno'] ?? '';
 $alloted = intval($data['alloted'] ?? 0);
 $allotdate = $data['allotdate'] ?? null;
 $remarks = $data['remarks'] ?? '';
+if ($billtype <= 0) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid Bill Type selected'
+    ]);
+    exit;
+}
 
+$chk = $conn->prepare("SELECT COUNT(*) FROM bill_type_master WHERE Id = ?");
+$chk->execute([$billtype]);
+
+if ($chk->fetchColumn() == 0) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Selected Bill Type does not exist'
+    ]);
+    exit;
+}
 if ($billno === '' || $alloted === 0 || trim($remarks) === '') {
     echo json_encode(['status'=>'error','message'=>'BillNo, Alloted and Remarks are required']); exit;
 }
@@ -38,3 +55,4 @@ try {
 } catch (Exception $e) {
     echo json_encode(['status'=>'error','message'=>$e->getMessage()]);
 }
+?>

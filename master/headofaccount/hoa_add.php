@@ -14,19 +14,9 @@ if ($stmt->fetchColumn() == 0) {
 }
 
 
-function getFinancialYears($count = 2) {
-    $years = [];
-    $currentYear = date('Y');
-    $currentMonth = date('n');
-    $startYear = ($currentMonth >= 4) ? $currentYear : $currentYear - 1;
 
-    for ($i = 0; $i < $count; $i++) {
-        $years[] = ($startYear + $i) . '-' . ($startYear + $i + 1);
-    }
-    return $years;
-}
-
-$finYears = getFinancialYears();
+$finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1 ORDER BY FinYear DESC")
+    ->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
@@ -98,20 +88,18 @@ require $sidebar;
 
                 <div class="mb-3">
                     <label class="form-label">Financial Year</label>
-                    <select name="financial_year" id="financial_year" class="form-select soft-input" required>
-                        <?php
+                    <select name="financial_year" id="financial_year" class="form-select" required>
+                        <?php 
                         $currentYear = date('Y');
-                        $years = [
-                            ($currentYear-1).'-'.substr($currentYear, 2),
-                            $currentYear.'-'.substr($currentYear+1, 2),
-                            ($currentYear+1).'-'.substr($currentYear+2, 2)
-                        ];
-                        foreach($years as $fy) {
-                            echo "<option value='$fy'>$fy</option>";
-                        }
-                        ?>
-                        </select>
-
+                        $currentMonth = date('n');
+                        $currentFY = ($currentMonth >= 4) ? $currentYear.'-'.($currentYear+1) : ($currentYear-1).'-'.$currentYear;
+                        foreach ($finYears as $fy): ?>
+                        <option value="<?= $fy['Id'] ?>" <?= ($fy['FinYear']==$currentFY)?'selected':'' ?>>
+                            <?= $fy['FinYear'] ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                   
                 </div>
 
                 <div class="col-md-4">

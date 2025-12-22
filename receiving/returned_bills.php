@@ -16,9 +16,10 @@ if ($stmt->fetchColumn() == 0) {
 
 // Fetch returned bills
 $rows = $conn->query("
-    SELECT b.*, e.EmployeeName AS AllotedName 
+    SELECT b.*,cs.ReplyText, e.EmployeeName AS AllotedName 
     FROM bill_entry b
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
+    left join concerned_section_reply cs on cs.BillId = b.Id
     WHERE b.Status = 'Returned'
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -42,14 +43,15 @@ $rows = $conn->query("
             <thead class="table-light">
                 <tr>
                     <th>#</th>
-                    <th>Bill No</th>
+                     <th>Bill No</th>
                     <th>Token No</th>
                     <th>Received</th>
                     <th>From Section</th>
                     <th>Section Dealing Assistant</th>
                     <th>Alloted To</th>
                     <th>Alloted Date</th>
-                    <th>Remarks</th>
+                    <th>Reason for Returning Bill</th>
+                    <th>Reply of Concerned Section</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -66,10 +68,17 @@ $rows = $conn->query("
         <td><?= htmlspecialchars($r['AllotedName']) ?></td>
         <td><?= htmlspecialchars($r['AllotedDate']) ?></td>
         <td><?= htmlspecialchars($r['Remarks']) ?></td>
+        <td><?= htmlspecialchars($r['ReplyText']) ?></td>
         <td>
-            <a href="returned_bill_resubmit.php?id=<?= $r['Id'] ?>" class="btn btn-sm btn-primary">
-                Resubmit
-            </a>
+            <?php if ($r['concerned_reply'] == 'Y'): ?>
+                <a href="returned_bill_resubmit.php?id=<?= $r['Id'] ?>" class="btn btn-sm btn-primary">
+                    Resubmit
+                </a>
+            <?php else: ?>
+                <button class="btn btn-sm btn-secondary" disabled>
+                    Awaiting Reply
+                </button>
+            <?php endif; ?>
         </td>
     </tr>
     <?php endforeach; ?>

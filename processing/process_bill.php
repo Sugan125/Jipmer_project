@@ -175,34 +175,36 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
 <script>
 $(document).ready(function(){
  function loadHOA(fy, selectedHOA = '') {
-        if(fy === '') {
-            $('#hoa').html('<option value="">Select HOA</option>');
-            return;
-        }
-        $.ajax({
-            url: 'get_hoa_by_fy.php',
-            type: 'GET',
-            data: { fy: fy },
-            dataType: 'json',
-            success: function(data){
-                let options = '<option value="">Select HOA</option>';
-$.each(data, function(i, hoa){
-    options += `<option value="${hoa.Id}" data-fy="${hoa.FinancialYearId}">${hoa.FullHOA}</option>`;
-});
-$('#hoa').html(options);
-            },
-            error: function(){
-                Swal.fire('Error', 'Could not load HOA options', 'error');
-            }
-        });
+    if(fy === '') {
+        $('#hoa').html('<option value="">Select HOA</option>');
+        return;
     }
-console.log($('#financial_year').val());
-    // Load HOA on page load
-    loadHOA($('#financial_year').val());
-$('#financial_year').on('change', function(){
-
-        loadHOA($(this).val());
+    $.ajax({
+        url: 'get_hoa_by_fy.php',
+        type: 'GET',
+        data: { fy: fy },
+        dataType: 'json',
+        success: function(data){
+            let options = '<option value="">Select HOA</option>';
+            $.each(data, function(i, hoa){
+                options += `<option value="${hoa.Id}" data-fy="${hoa.FinYearId}">${hoa.FullHOA}</option>`;
+            });
+            $('#hoa').html(options);
+        },
+        error: function(){
+            Swal.fire('Error', 'Could not load HOA options', 'error');
+        }
     });
+}
+
+console.log($('#financial_year').val());
+// Load HOA on page load
+loadHOA($('#financial_year').val());
+
+$('#financial_year').on('change', function(){
+    loadHOA($(this).val());
+});
+
 
     // Show/Hide Return Reason
     $('#status').on('change', function(){

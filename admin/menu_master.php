@@ -12,58 +12,68 @@ $menubar = $conn->query("
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Menu Management</title>
+    <title>Bill Type Master</title>
 
-    <!-- Bootstrap CSS -->
+    <!-- CSS -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../css/all.min.css">
     <link rel="stylesheet" href="../css/style.css">
+  
 
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
-
-    <!-- jQuery (ONCE ONLY) -->
-    <script src="../js/jquery-3.7.1.min.js"></script>
-
-    <!-- Bootstrap JS -->
-    <script src="../js/bootstrap/bootstrap.bundle.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="../js/datatables/jquery.dataTables.min.js"></script>
-    <script src="../js/datatables/dataTables.bootstrap5.min.js"></script>
-
-    <!-- SweetAlert -->
-    <script src="../js/sweetalert2.all.min.js"></script>
+    
 </head>
 
+<body>
 
-<body class="soft-bg">
+<?php
+$topbar = realpath(__DIR__ . '/../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../../layout/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/topbar.php')
+       ?: realpath(__DIR__ . '/../../includes/layout/topbar.php');
 
-<?php include '../layout/topbar.php'; ?>
-<?php include '../layout/sidebar.php'; ?>
+$sidebar = realpath(__DIR__ . '/../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../../layout/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/sidebar.php')
+        ?: realpath(__DIR__ . '/../../includes/layout/sidebar.php');
 
-<div style="margin-left:240px; padding:20px;">
-    <h3 class="mb-4">Menu Management</h3>
+if (!$topbar || !$sidebar) {
+    die('Layout files not found. Please check folder structure.');
+}
 
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#menuModal">
-        ➕ Add Menu
-    </button>
+require $topbar;
+require $sidebar;
+?>
 
-    <table id="menuTable" class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Menu Name</th>
-                <th>Page URL</th>
-                <th>Icon</th>
-                <th>Sort Order</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
+<div class="container mt-5">
+
+    <div class="page-card">
+
+        <!-- HEADER -->
+        <div class="page-header">
+            <h5><i class="fa-solid fa-file-invoice me-2"></i>Menu Management</h5>
+
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#menuModal">
+            ➕ Add Menu
+        </button>
+        </div>
+        <table id="menuTable" class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Menu ID</th>
+                    <th>Menu Name</th>
+                    <th>Page URL</th>
+                    <th>Icon</th>
+                    <th>Sort Order</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
         <tbody>
-        <?php foreach ($menubar as $m): ?>
+        <?php foreach ($menubar as $m): 
+            ?>
             <tr>
                 <td><?= $m['MenuId'] ?></td>
                 <td><?= htmlspecialchars($m['MenuName']) ?></td>
@@ -85,6 +95,7 @@ $menubar = $conn->query("
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 
 <!-- Add/Edit Modal -->
@@ -145,11 +156,9 @@ $menubar = $conn->query("
 
 <script>
 $(document).ready(function () {
-$(document).ready(function () {
-    $('#menuTable').DataTable();
-});
+
     // Initialize DataTable (pagination + search)
-    $('#menuTable').DataTable({
+     $('#menuTable').DataTable({
         pageLength: 10,
         lengthMenu: [5, 10, 25, 50],
         ordering: true,
@@ -164,6 +173,25 @@ $(document).ready(function () {
             }
         }
     });
+
+      $('#menuTable').on('click', '.editMenuBtn', function () {
+        let id = $(this).data('id');
+        $.post('menu_action.php', { action: 'get', MenuId: id }, function (res) {
+            if (res.status === 'success') {
+                $("#MenuId").val(res.data.MenuId);
+                $("#MenuName").val(res.data.MenuName);
+                $("#PageUrl").val(res.data.PageUrl);
+                $("#IconClass").val(res.data.IconClass);
+                $("#SortOrder").val(res.data.SortOrder);
+                $("#Status").val(res.data.Status);
+                $("#menuModalTitle").text("Edit Menu");
+                new bootstrap.Modal(document.getElementById('menuModal')).show();
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        }, 'json');
+    });
+
 
     // Edit menu
     $(".editMenuBtn").click(function () {
@@ -185,7 +213,7 @@ $(document).ready(function () {
     });
 
     // Save menu
-    $("#menuForm").submit(function (e) {
+   $("#menuForm").submit(function (e) {
         e.preventDefault();
         $.post('menu_action.php', $(this).serialize(), function (res) {
             if (res.status === 'success') {
@@ -196,6 +224,7 @@ $(document).ready(function () {
             }
         }, 'json');
     });
+
 
     // Delete menu
     $(".deleteMenuBtn").click(function () {

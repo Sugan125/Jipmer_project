@@ -101,7 +101,7 @@ body {
         <label class="form-label">Bill Type</label>
 
     <div class="input-group">
-        <select id="BillTypeId" class="form-select">
+        <select id="BillTypeId"  name="BillTypeId" class="form-select">
             <option value="">Select</option>
             <?php foreach($bill_type as $b): ?>
                 <option value="<?= $b['Id'] ?>">

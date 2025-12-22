@@ -2,15 +2,6 @@
 header('Content-Type: application/json');
 include '../config/db.php';
 include '../includes/auth.php';
-$page = basename($_SERVER['PHP_SELF']);
-$stmt = $conn->prepare("
-    SELECT COUNT(*)
-    FROM menu_master m
-    JOIN role_menu_permission rmp ON m.MenuId = rmp.MenuId
-    WHERE rmp.RoleId = ? AND m.PageUrl LIKE ? AND rmp.Status = 1
-");
-$stmt->execute([$_SESSION['role'], "%$page%"]);
-
 
 $fy = $_GET['fy'] ?? '';
 if($fy === '') {
@@ -18,7 +9,16 @@ if($fy === '') {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT Id, FullHOA FROM head_of_account_master WHERE FinancialYear = ? ORDER BY FullHOA");
+// Select from hoa_master
+$stmt = $conn->prepare("
+    SELECT 
+        HoaId AS Id, 
+        CONCAT(DetailsHeadCode, ' - ', ObjectHeadCode, ' - ', SubDetailsHeadName) AS FullHOA,
+        FinYearId
+    FROM hoa_master
+    WHERE FinYearId = ?
+    ORDER BY DetailsHeadCode, ObjectHeadCode, SubDetailsHeadName
+");
 $stmt->execute([$fy]);
 $hoas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

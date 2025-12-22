@@ -16,9 +16,10 @@ if ($stmt->fetchColumn() == 0) {
 
 // Fetch bills
 $rows = $conn->query("
-    SELECT b.*, e.EmployeeName AS AllotedName 
+    SELECT b.*, e.EmployeeName AS AllotedName , btm.BillType
     FROM bill_entry b
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
+    left join bill_type_master btm on  btm.Id = b.BillTypeId
     ORDER BY b.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -55,6 +56,7 @@ $rows = $conn->query("
                 <tr>
                     <th>#</th>
                     <th>Bill No</th>
+                    <th>Bill Type</th>
                     <th>Received</th>
                     <th>From Section</th>
                     <th>Alloted To</th>
@@ -69,6 +71,7 @@ $rows = $conn->query("
                 <tr>
                     <td><?= $r['Id'] ?></td>
                     <td><?= htmlspecialchars($r['BillNo']) ?></td>
+                    <td><?= $r['BillType'] ?>
                     <td><?= $r['BillReceivedDate'] ?></td>
                     <td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
                     <td><?= htmlspecialchars($r['AllotedName']) ?></td>
