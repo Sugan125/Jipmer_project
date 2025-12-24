@@ -1,7 +1,7 @@
 <?php
 include '../config/db.php';
 include '../includes/auth.php';
-
+$initial_id = (int)($_GET['initial_id'] ?? 0);
 // Authorization check
 $page = basename($_SERVER['PHP_SELF']);
 $stmt = $conn->prepare("
@@ -18,6 +18,13 @@ $emps      = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE St
 $bill_type = $conn->query("SELECT Id, BillType FROM bill_type_master WHERE Status=1 and IsActive =1 ORDER BY BillType")->fetchAll(PDO::FETCH_ASSOC);
 $credit    = $conn->query("SELECT Id, CreditName FROM account_credit_master WHERE Status=1")->fetchAll();
 $debit     = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Status=1")->fetchAll();
+
+$init = null;
+if($initial_id){
+$stmt = $conn->prepare("SELECT * FROM bill_initial_entry WHERE Id=?");
+$stmt->execute([$initial_id]);
+$init = $stmt->fetch(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
@@ -78,6 +85,7 @@ body {
         <form id="billForm">
             <div class="row g-3">
                 <div class="col-md-6">
+                    
                     <label class="form-label">Bill No</label>
                     <input type="text" name="billno" class="form-control">
                 </div>

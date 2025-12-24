@@ -77,11 +77,23 @@ $rows = $conn->query("
                     <td><?= htmlspecialchars($r['AllotedName']) ?></td>
                     <td><?= htmlspecialchars($r['Status']) ?></td>
                     <td class="text-center">
+                    <?php if ($r['Status'] === 'Draft'): ?>
+
+                        <a href="bill_entry.php?id=<?= $r['Id'] ?>" 
+                        class="btn btn-sm btn-success">
+                        ▶ Proceed to Bill Entry
+                        </a>
+
+                    <?php else: ?>
+
                         <a href="bill_history.php?id=<?= $r['Id'] ?>" 
                         class="btn btn-sm btn-info">
                         📜 History
                         </a>
+
+                    <?php endif; ?>
                     </td>
+
 
                     <!-- <td class="text-center">
                         <a class="btn btn-sm btn-primary" 

@@ -217,9 +217,9 @@ require realpath(__DIR__ . '/../layout/sidebar.php');
 
             <div class="text-center mt-4 no-print">
                 <button type="submit" class="btn btn-success px-4">
-                    Submit Reply & Resubmit
+                    Submit Reply
                 </button>
-                <a href="returned_bills.php" class="btn btn-secondary px-4">
+                <a href="returned_bill_memo.php" class="btn btn-secondary px-4">
                     Cancel
                 </a>
                 <button type="button" onclick="window.print()" class="btn btn-outline-dark px-4">
