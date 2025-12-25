@@ -27,7 +27,7 @@ if (!$bill || $bill['Status'] != 'Returned') {
 }
 
 // Fetch employees for allotment
-$emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=1 ORDER BY EmployeeName")
+$emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=1 and RoleId = 2 ORDER BY EmployeeName")
              ->fetchAll(PDO::FETCH_ASSOC);
 
 $bill_type = $conn->query("SELECT Id, BillType FROM bill_type_master WHERE Status=1 and IsActive = 1 ORDER BY BillType")

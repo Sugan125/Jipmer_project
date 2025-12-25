@@ -34,6 +34,8 @@ $rows = $conn->query("
     <!-- Bootstrap -->
     <link rel="stylesheet" href="../css/bootstrap.min.css">
 
+    <link rel="stylesheet" href="../css/all.min.css">
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
 
