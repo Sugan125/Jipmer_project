@@ -14,30 +14,24 @@ $stmt->execute([$_SESSION['role'], "%$page%"]);
 header('Content-Type: application/json');
 
 $id = intval($_POST['id'] ?? 0);
-$billno = trim($_POST['billno'] ?? '');
-$billtype = intval($_POST['BillTypeId'] ?? 0);
 $CreditToId = intval($_POST['CreditToId'] ?? 0);
 $DebitFromId = intval($_POST['DebitFromId'] ?? 0);
-$billdate = $_POST['billdate'] ?? null;
-$fromsection = $_POST['fromsection'] ?? '';
-$sdaname = $_POST['sdaname'] ?? '';
 $tokno = $_POST['tokno'] ?? '';
 $alloted = intval($_POST['alloted'] ?? 0);
 $allotdate = $_POST['allotdate'] ?? null;
 $remarks = $_POST['remarks'] ?? '';
 $updatedby = $_SESSION['user_id'];
 
-if ($id === 0 || $billno === '' || $billtype === 0 || $alloted === 0 || trim($remarks) === '' || $CreditToId === 0 || $DebitFromId === 0) {
+if ($id === 0 || trim($remarks) === '' || $CreditToId === 0 || $DebitFromId === 0) {
     echo json_encode(['status'=>'error','message'=>'Required fields missing']);
     exit;
 }
 
 try {
-    $stmt = $conn->prepare("UPDATE bill_entry SET 
-                            BillNo=?, BillTypeId=?,CreditToId=?, DebitFromId=?, BillReceivedDate=?, ReceivedFromSection=?, SectionDAName=?, TokenNo=?, 
+    $stmt = $conn->prepare("UPDATE bill_entry SET CreditToId=?, DebitFromId=?, TokenNo=?, 
                             AllotedDealingAsst=?, AllotedDate=?, Remarks=?, Status='Pending', UpdatedDate=GETDATE(), UpdatedBy = ?
                             WHERE Id=? AND Status='Returned'");
-    $stmt->execute([$billno,$billtype,$CreditToId,$DebitFromId, $billdate, $fromsection, $sdaname, $tokno, $alloted, $allotdate, $remarks,$updatedby, $id]);
+    $stmt->execute([$CreditToId,$DebitFromId, $tokno, $alloted, $allotdate, $remarks,$updatedby, $id]);
 
     echo json_encode(['status'=>'success','message'=>'Bill resubmitted successfully']);
 } catch(Exception $e) {

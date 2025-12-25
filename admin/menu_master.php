@@ -153,7 +153,11 @@ require $sidebar;
         </div>
     </div>
 </div>
-
+    <script src="../js/jquery-3.7.1.min.js"></script>
+    <script src="../js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="../js/datatables/jquery.dataTables.min.js"></script>
+    <script src="../js/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="../js/sweetalert2.all.min.js"></script>
 <script>
 $(document).ready(function () {
 
@@ -193,24 +197,6 @@ $(document).ready(function () {
     });
 
 
-    // Edit menu
-    $(".editMenuBtn").click(function () {
-        let id = $(this).data('id');
-        $.post('menu_action.php', { action: 'get', MenuId: id }, function (res) {
-            if (res.status === 'success') {
-                $("#MenuId").val(res.data.MenuId);
-                $("#MenuName").val(res.data.MenuName);
-                $("#PageUrl").val(res.data.PageUrl);
-                $("#IconClass").val(res.data.IconClass);
-                $("#SortOrder").val(res.data.SortOrder);
-                $("#Status").val(res.data.Status);
-                $("#menuModalTitle").text("Edit Menu");
-                new bootstrap.Modal(document.getElementById('menuModal')).show();
-            } else {
-                Swal.fire('Error', res.message, 'error');
-            }
-        }, 'json');
-    });
 
     // Save menu
    $("#menuForm").submit(function (e) {

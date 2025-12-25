@@ -18,10 +18,11 @@ if ($stmt->fetchColumn() == 0) {
 $userId = $_SESSION['user_id'];
 
 if($_SESSION['role'] == '5'){
-    echo 'asdgdjas';
+   
     $stmt = $conn->prepare("
-    SELECT b.*, e.EmployeeName AS AllotedName 
+    SELECT b.*,bn.BillNumber, Bn.BillReceivedDate, e.EmployeeName AS AllotedName 
     FROM bill_entry b
+    left join bill_initial_entry bn on bn.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
     WHERE b.Status IN ('Pending','Returned') 
     ORDER BY b.CreatedDate DESC
@@ -30,10 +31,11 @@ $stmt->execute();
 
 }
 else{
-    echo 'asdgdjas';
+ 
 $stmt = $conn->prepare("
-    SELECT b.*, e.EmployeeName AS AllotedName 
+    SELECT b.*,bn.BillNumber, Bn.BillReceivedDate, e.EmployeeName AS AllotedName 
     FROM bill_entry b
+    left join bill_initial_entry bn on bn.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
     WHERE b.Status IN ('Pending','Returned') 
       AND b.AllotedDealingAsst = :user_id
@@ -87,7 +89,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
 <?php foreach($rows as $r): ?>
     <tr>
         <td><?= $r['Id'] ?></td>
-        <td><?= htmlspecialchars($r['BillNo']) ?></td>
+        <td><?= htmlspecialchars($r['BillNumber']) ?></td>
         <td><?= htmlspecialchars($r['BillReceivedDate']) ?></td>
         <td><?= htmlspecialchars($r['AllotedName']) ?></td>
 
@@ -104,7 +106,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
         <td>
             <button 
                 class="btn btn-sm btn-primary process-btn"
-                data-id="<?= $r['Id'] ?>"
+                data-id="<?= $r['BillInitialId'] ?>"
                 <?= ($r['Status'] == 'Returned') ? 'disabled' : '' ?>
             >
                 <i class="fas fa-play-circle"></i> Process

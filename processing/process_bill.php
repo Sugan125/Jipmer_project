@@ -11,14 +11,43 @@ $stmt = $conn->prepare("
 $stmt->execute([$_SESSION['role'], "%$page%"]);
 
 $billId = intval($_POST['bill_id'] ?? 0);
-if (!$billId) { header('Location: process_list.php'); exit; }
+?>
+<?php if (!$billId): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: 'error',
+        title: 'Bill Not Found',
+        text: 'The selected bill does not exist or was already processed.',
+        confirmButtonText: 'OK'
+    }).then(() => {
+        window.location.href = 'process_list.php';
+    });
+});
+</script>
+<?php endif; ?>
+<?php
 
 // Fetch bill details
-$stmt = $conn->prepare("SELECT * FROM bill_entry WHERE Id = ?");
+$stmt = $conn->prepare("SELECT be.*,bi.* FROM bill_entry be left join bill_initial_entry bi on bi.Id=be.BillInitialId WHERE be.BillInitialId = ?");
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$bill) { header('Location: process_list.php'); exit; }
-
+?>
+<?php if (!$bill): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: 'error',
+        title: 'Bill Not Found',
+        text: 'The selected bill does not exist or was already processed.',
+        confirmButtonText: 'OK'
+    }).then(() => {
+        window.location.href = 'process_list.php';
+    });
+});
+</script>
+<?php endif; ?>
+<?php
 $finYears = $conn->query("SELECT Id, FinYear FROM fin_year_master WHERE Status=1 ORDER BY FinYear DESC")
     ->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -44,14 +73,14 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
 <div class="page-content">
     <div class="card shadow rounded">
         <div class="card-header bg-primary text-white">
-            <h4><i class="fas fa-file-invoice"></i> Process Bill #<?= htmlspecialchars($bill['BillNo']) ?></h4>
+            <h4><i class="fas fa-file-invoice"></i> Process Bill #<?= htmlspecialchars($bill['BillNumber']) ?></h4>
         </div>
         <div class="card-body">
             <form id="processBillForm">
                 <input type="hidden" name="bill_id" value="<?= $billId ?>">
 
                       <!-- Bill Info -->
-                <div class="mb-3"><strong>Bill No:</strong> <?= htmlspecialchars($bill['BillNo']) ?></div>
+                <div class="mb-3"><strong>Bill No:</strong> <?= htmlspecialchars($bill['BillNumber']) ?></div>
                 <div class="mb-3"><strong>Received:</strong> <?= date('d/m/Y', strtotime($bill['BillReceivedDate'])) ?></div>
 
                 <!-- Financial Year -->

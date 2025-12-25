@@ -3,19 +3,31 @@ include '../config/db.php';
 include '../includes/auth.php';
 
 $billId = (int)($_POST['bill_id'] ?? 0);
+
+
+
 if ($billId <= 0) {
     die("Invalid Bill");
 }
-
 $stmt = $conn->prepare("
-    SELECT b.BillNo, b.TokenNo, b.BillReceivedDate, b.Remarks,
-           bp.ReasonForReturn,bp.Amount
-    FROM bill_entry b
-    JOIN bill_process bp ON bp.BillId = b.Id
-    WHERE b.Id = ?
+    SELECT 
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        bi.ReceivedFromSection,
+        be.TokenNo,
+        be.Remarks,
+        bp.ReasonForReturn,
+        bp.Amount
+    FROM bill_entry be
+    INNER JOIN bill_initial_entry bi 
+        ON bi.Id = be.BillInitialId
+    LEFT JOIN bill_process bp 
+        ON bp.BillId = bi.Id
+    WHERE be.Id = ?
 ");
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
+
 
 if (!$bill) {
     die("No returned bill found");
@@ -160,7 +172,7 @@ require realpath(__DIR__ . '/../layout/sidebar.php');
         <table class="memo-table mb-3">
             <tr>
                 <th width="30%">1. Bill No</th>
-                <td><?= htmlspecialchars($bill['BillNo']) ?></td>
+                <td><?= htmlspecialchars($bill['BillNumber']) ?></td>
             </tr>
             <tr>
                 <th>2. Token No</th>

@@ -22,13 +22,30 @@ if ($stmt->fetchColumn() == 0) {
 
 // bills with Pass status and not yet in final_accounts
 $rows = $conn->query("
-    SELECT b.*, p.TotalAmount, p.Status as ProcessStatus
-    FROM bill_entry b
-    LEFT JOIN bill_process p ON p.BillId = b.Id
-    INNER JOIN bill_transactions t ON t.BillId = b.Id
-    WHERE b.Status = 'Transaction Done' and p.Status = 'Pass'
-    AND NOT EXISTS (SELECT 1 FROM final_accounts f WHERE f.BillId = b.Id)
-    ORDER BY b.CreatedDate DESC
+    SELECT 
+        bi.Id,
+        b.Status,
+        b.CreatedDate,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        bi.ReceivedFromSection,
+        p.TotalAmount,
+        p.Status AS ProcessStatus
+     FROM bill_entry b
+ INNER JOIN bill_initial_entry bi
+     ON bi.Id = b.BillInitialId
+ INNER JOIN bill_process p
+     ON p.BillId = b.Id
+    AND p.Status = 'Pass'
+ INNER JOIN bill_transactions t
+     ON t.BillId = bi.Id
+ WHERE b.Status = 'Transaction Done'
+   AND NOT EXISTS (
+         SELECT 1
+         FROM final_accounts f
+         WHERE f.BillId = b.Id
+   )
+ ORDER BY b.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -75,7 +92,7 @@ $rows = $conn->query("
             <?php foreach($rows as $r): ?>
                 <tr>
                     <td><?= $r['Id'] ?></td>
-                    <td><?= htmlspecialchars($r['BillNo']) ?></td>
+                    <td><?= htmlspecialchars($r['BillNumber']) ?></td>
                     <td><?= htmlspecialchars($r['TotalAmount']) ?></td>
                     <td>
                         <button class="btn btn-sm btn-primary enter-voucher-btn" data-id="<?= $r['Id'] ?>">

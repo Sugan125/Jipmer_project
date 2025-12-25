@@ -13,11 +13,24 @@ if ($stmt->fetchColumn() == 0) die("Unauthorized Access");
 
 // Get bills which are Passed and NOT yet in transactions
 $rows = $conn->query("
-    SELECT b.Id, b.BillNo, p.TotalAmount
+    SELECT 
+        b.Id,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        bi.ReceivedFromSection,
+        p.TotalAmount
     FROM bill_entry b
-    LEFT JOIN bill_process p ON p.BillId = b.Id
-    WHERE b.Status='Pass' and p.Status = 'Pass'
-    AND NOT EXISTS (SELECT 1 FROM bill_transactions t WHERE t.BillId = b.Id)
+    INNER JOIN bill_initial_entry bi
+        ON bi.Id = b.BillInitialId
+    INNER JOIN bill_process p
+        ON p.BillId = bi.Id
+       AND p.Status = 'Pass'
+    WHERE b.Status = 'Pass'
+      AND NOT EXISTS (
+            SELECT 1
+            FROM bill_transactions t
+            WHERE t.BillId = b.Id
+      )
     ORDER BY b.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -63,7 +76,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
             <?php foreach($rows as $r): ?>
                 <tr>
                     <td><?= $r['Id'] ?></td>
-                    <td><?= htmlspecialchars($r['BillNo']) ?></td>
+                    <td><?= htmlspecialchars($r['BillNumber']) ?></td>
                     <td><?= htmlspecialchars($r['TotalAmount']) ?></td>
                     <td>
                         <button class="btn btn-sm btn-primary add-transaction-btn" data-id="<?= $r['Id'] ?>">

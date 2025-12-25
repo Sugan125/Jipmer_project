@@ -13,8 +13,9 @@ $stmt->execute([$_SESSION['role'], "%$page%"]);
 
 // Fetch returned bills
 $rows = $conn->query("
-    SELECT b.*, e.EmployeeName AS AllotedName 
+    SELECT b.*, e.EmployeeName AS AllotedName, bi.BillNumber, bi.BillReceivedDate , bi.ReceivedFromSection, bi.SectionDAName
     FROM bill_entry b
+    left join bill_initial_entry bi on bi.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
     WHERE b.Status = 'Returned'
 ")->fetchAll(PDO::FETCH_ASSOC);
@@ -87,7 +88,7 @@ require $sidebar;
             <?php foreach($rows as $r): ?>
             <tr>
                 <td><?= $r['Id'] ?></td>
-                <td><?= htmlspecialchars($r['BillNo']) ?></td>
+                <td><?= htmlspecialchars($r['BillNumber']) ?></td>
                 <td><?= htmlspecialchars($r['TokenNo']) ?></td>
                 <td><?= $r['BillReceivedDate'] ?></td>
                 <td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
@@ -100,7 +101,7 @@ require $sidebar;
                             <span class="text-success">Reply Submitted</span>
                         <?php else: ?>
                            <form action="returned_bill_reply.php" method="post" style="display:inline;">
-                            <input type="hidden" name="bill_id" value="<?= $r['Id'] ?>">
+                           <input type="hidden" name="bill_id" value="<?= $r['Id'] ?>">
                             <button type="submit" class="btn btn-sm btn-primary">
                                 Reply
                             </button>

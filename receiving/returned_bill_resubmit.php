@@ -18,7 +18,7 @@ if (!isset($_GET['id'])) {
 $billId = intval($_GET['id']);
 
 // Fetch bill details
-$stmt = $conn->prepare("SELECT * FROM bill_entry WHERE Id = ?");
+$stmt = $conn->prepare("SELECT be.*, bi.BillNumber, bi.BillReceivedDate, bi.ReceivedFromSection, bi.SectionDAName, bi.BillTypeId FROM bill_entry be left join bill_initial_entry bi on bi.Id = be.BillInitialId WHERE be.Id = ?");
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -59,21 +59,21 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Bill No</label>
-                    <input type="text" name="billno" class="form-control" value="<?= htmlspecialchars($bill['BillNo']) ?>" required>
+                    <label class="form-label">Bill Number</label>
+                    <input type="text" name="billno" class="form-control readonly-input" value="<?= htmlspecialchars($bill['BillNumber']) ?>" readonly>
                  
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Bill Received Date</label>
-                    <input type="date" name="billdate" class="form-control" value="<?= $bill['BillReceivedDate'] ?>">
+                    <input type="date" name="billdate" class="form-control readonly-input" value="<?= $bill['BillReceivedDate'] ?>" readonly>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Received From Section</label>
-                    <input type="text" name="fromsection" class="form-control" value="<?= htmlspecialchars($bill['ReceivedFromSection']) ?>">
+                    <input type="text" name="fromsection" class="form-control readonly-input" value="<?= htmlspecialchars($bill['ReceivedFromSection']) ?>" readonly>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Section DA Name</label>
-                    <input type="text" name="sdaname" class="form-control" value="<?= htmlspecialchars($bill['SectionDAName']) ?>">
+                    <input type="text" name="sdaname" class="form-control readonly-input" value="<?= htmlspecialchars($bill['SectionDAName']) ?>" readonly>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Token No</label>
@@ -81,7 +81,7 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
                 </div>
                  <div class="col-md-6">
     <label class="form-label">Bill Type</label>
-    <select name="BillTypeId" class="form-select" required>
+    <select name="BillTypeId" class="form-select readonly-input" disabled>
         <option value="">Select</option>
         <?php foreach ($bill_type as $b): ?>
             <option value="<?= $b['Id'] ?>"

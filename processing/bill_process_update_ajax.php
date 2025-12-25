@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // Update bill_entry status
-            $u = $conn->prepare("UPDATE bill_entry SET Status = ? WHERE Id = ?");
+            $u = $conn->prepare("UPDATE bill_entry SET Status = ? WHERE BillInitialId = ?");
             $u->execute([$status, $billId]);
 
             $response['status'] = 'success';

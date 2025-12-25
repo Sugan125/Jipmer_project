@@ -16,8 +16,9 @@ if ($stmt->fetchColumn() == 0) {
 
 // Fetch returned bills
 $rows = $conn->query("
-    SELECT b.*,cs.ReplyText, e.EmployeeName AS AllotedName 
+    SELECT b.*,cs.ReplyText, e.EmployeeName AS AllotedName ,bn.BillNumber, Bn.BillReceivedDate, bn.SectionDAName, bn.ReceivedFromSection
     FROM bill_entry b
+     left join bill_initial_entry bn on bn.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
     left join concerned_section_reply cs on cs.BillId = b.Id
     WHERE b.Status = 'Returned'
@@ -60,7 +61,7 @@ $rows = $conn->query("
     <?php foreach($rows as $r): ?>
     <tr>
         <td><?= $r['Id'] ?></td>
-        <td><?= htmlspecialchars($r['BillNo']) ?></td>
+        <td><?= htmlspecialchars($r['BillNumber']) ?></td>
         <td><?= htmlspecialchars($r['TokenNo']) ?></td>
         <td><?= $r['BillReceivedDate'] ?></td>
         <td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
