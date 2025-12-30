@@ -21,7 +21,7 @@ $rows = $conn->query("
      left join bill_initial_entry bn on bn.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
     left join concerned_section_reply cs on cs.BillId = b.Id
-    WHERE b.Status = 'Returned'
+    WHERE b.Status = 'Return'
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

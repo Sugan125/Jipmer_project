@@ -35,14 +35,12 @@ if ($tokno === '' || $alloted === 0 || trim($remarks) === '') {
 try {
  $stmt = $conn->prepare("
 INSERT INTO bill_entry
-(BillInitialId, CreditToId, DebitFromId, TokenNo, AllotedDealingAsst, AllotedDate, Remarks, CreatedBy, CreatedIP, Status)
-VALUES (?,?,?,?,?,?,?,?,?,'Pending')
+(BillInitialId, TokenNo, AllotedDealingAsst, AllotedDate, Remarks, CreatedBy, CreatedIP, Status)
+VALUES (?,?,?,?,?,?,?,'Pending')
 ");
 
 $stmt->execute([
     $billInitialId,
-    $credit,
-    $debit,
     $tokno,
     $alloted,
     $allotdate,

@@ -1,25 +1,30 @@
 <?php
-header('Content-Type: application/json');
 include '../config/db.php';
-include '../includes/auth.php';
 
-$fy = $_GET['fy'] ?? '';
-if($fy === '') {
-    echo json_encode([]);
-    exit;
+$finYearId = $_GET['FinYearId'] ?? 0;
+
+$stmt = $conn->prepare("
+    SELECT HoaId,
+           DetailsHeadCode,
+           DetailsHeadName,
+           ObjectHeadCode,
+           SubDetailsHeadName
+    FROM hoa_master
+    WHERE Status = 1
+      AND FinYearId = ?
+    ORDER BY DetailsHeadCode
+");
+$stmt->execute([$finYearId]);
+
+$data = [];
+while($row = $stmt->fetch()){
+    $data[] = [
+        'id' => $row['HoaId'],
+        'text' => $row['DetailsHeadCode'].' - '.
+                  $row['DetailsHeadName'].' / '.
+                  $row['ObjectHeadCode'].' - '.
+                  $row['SubDetailsHeadName']
+    ];
 }
 
-// Select from hoa_master
-$stmt = $conn->prepare("
-    SELECT 
-        HoaId AS Id, 
-        CONCAT(DetailsHeadCode, ' - ', ObjectHeadCode, ' - ', SubDetailsHeadName) AS FullHOA,
-        FinYearId
-    FROM hoa_master
-    WHERE FinYearId = ?
-    ORDER BY DetailsHeadCode, ObjectHeadCode, SubDetailsHeadName
-");
-$stmt->execute([$fy]);
-$hoas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-echo json_encode($hoas);
+echo json_encode($data);

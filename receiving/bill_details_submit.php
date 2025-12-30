@@ -4,48 +4,73 @@ include '../includes/auth.php';
 
 header('Content-Type: application/json');
 
-try{
+try {
+    if (empty($_POST['BillNumber']) || empty($_POST['BillReceivedDate'])) {
+        throw new Exception("Bill Number and Bill Received Date are required.");
+    }
+
     $conn->beginTransaction();
 
+    $totalAmount = 0;
+    $totalGST = 0;
+    $totalTDS = 0;
+    $grossTotal = 0;
+    $netTotal = 0;
+
+    $invoiceIds = $_POST['Invoices'] ?? [];
+
+    if (!empty($invoiceIds)) {
+        $placeholders = implode(',', array_fill(0, count($invoiceIds), '?'));
+
+        $stmtInv = $conn->prepare("
+            SELECT TotalAmount, GSTAmount, TDS
+            FROM invoice_master
+            WHERE Id IN ($placeholders)
+        ");
+        $stmtInv->execute($invoiceIds);
+        $selectedInvoices = $stmtInv->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($selectedInvoices as $inv) {
+            $totalAmount += $inv['TotalAmount'];
+            $totalGST += $inv['GSTAmount'];
+            $totalTDS += $inv['TDS'];
+        }
+
+        $grossTotal = $totalAmount + $totalGST;
+        $netTotal = $grossTotal - $totalTDS;
+    }
+
+    // Insert into bill_initial_entry with totals
     $stmt = $conn->prepare("
         INSERT INTO bill_initial_entry
-        (BillNumber, BillReceivedDate, ReceivedFromSection, SectionDAName,
-         BillTypeId, POOrderNo, POOrderDate, IT, GST, TDS_Type, PFMSUniqueNo,
-         CreatedBy, CreatedDate, Status)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,GETDATE(), 'DRAFT')
+        (BillNumber, BillReceivedDate, CreatedBy, CreatedDate, Status, TotalAmount, TotalGST, TotalTDS, GrossTotal, NetTotal)
+        VALUES (?, ?, ?, GETDATE(), 'DRAFT', ?, ?, ?, ?, ?)
     ");
-
     $stmt->execute([
         $_POST['BillNumber'],
         $_POST['BillReceivedDate'],
-        $_POST['ReceivedFromSection'],
-        $_POST['SectionDAName'],
-        $_POST['BillTypeId'],
-        $_POST['POOrderNo'],
-        $_POST['POOrderDate'],
-        $_POST['IT'],
-        $_POST['GST'],
-        $_POST['TDSType'],
-        $_POST['PFMSUniqueNo'],
-        $_SESSION['user_id']
+        $_SESSION['user_id'],
+        $totalAmount,
+        $totalGST,
+        $totalTDS,
+        $grossTotal,
+        $netTotal
     ]);
 
-   $billId = $conn->lastInsertId();
+    $billId = $conn->lastInsertId();
 
-/* Attach invoices */
-if (!empty($_POST['Invoices'])) {
-    $stmtInv = $conn->prepare("
-        INSERT INTO bill_invoice_map (BillInitialId, InvoiceId)
-        VALUES (?,?)
-    ");
-    foreach ($_POST['Invoices'] as $inv) {
-        $stmtInv->execute([$billId, $inv]);
+    // Attach selected invoices
+    if (!empty($invoiceIds)) {
+        $stmtMap = $conn->prepare("INSERT INTO bill_invoice_map (BillInitialId, InvoiceId) VALUES (?, ?)");
+        foreach ($invoiceIds as $invId) {
+            $stmtMap->execute([$billId, $invId]);
+        }
     }
-}
-    $conn->commit();
-    echo json_encode(['status'=>'success']);
 
-}catch(Exception $e){
-    $conn->rollBack();
-    echo json_encode(['status'=>'error','message'=>$e->getMessage()]);
+    $conn->commit();
+    echo json_encode(['status' => 'success']);
+
+} catch (Exception $e) {
+    if ($conn->inTransaction()) $conn->rollBack();
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }

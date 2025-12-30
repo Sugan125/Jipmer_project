@@ -3,13 +3,10 @@ include '../config/db.php';
 include '../includes/auth.php';
 
 /* ===== Fetch All Bills ===== */
-$rows = $conn->query("
-    SELECT b.Id, b.BillNumber, b.BillReceivedDate, b.ReceivedFromSection,
-           bt.BillType,be.Status
-    FROM bill_initial_entry b
-    left join bill_entry be on be.BillInitialId = b.Id
-    LEFT JOIN bill_type_master bt ON b.BillTypeId = bt.Id
-    ORDER BY b.CreatedDate DESC
+$bills = $conn->query("
+    SELECT Id, BillNumber, BillReceivedDate, ReceivedFromSection, Status
+    FROM bill_initial_entry
+    ORDER BY CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -19,82 +16,73 @@ $rows = $conn->query("
 <meta charset="UTF-8">
 <title>All Bills</title>
 
-<!-- Bootstrap -->
+<!-- Bootstrap & FontAwesome -->
 <link rel="stylesheet" href="../css/bootstrap.min.css">
 <link rel="stylesheet" href="../css/all.min.css">
-
-<!-- DataTables CSS -->
+<link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../js/datatables/dataTables.bootstrap5.min.css">
 
-<!-- Custom CSS -->
-<link rel="stylesheet" href="../css/style.css">
-
+<style>
+.page-content { margin-left:240px; padding:50px 30px; }
+.card { max-width:1200px; margin:auto; }
+.modal-lg { max-width: 90% !important; }
+.invoice-card { border:1px solid #ddd; padding:15px; margin-bottom:10px; border-radius:8px; background:#f9f9f9; }
+.invoice-header { background:#007bff; color:#fff; padding:8px 15px; border-radius:5px; margin-bottom:10px; }
+</style>
 </head>
 <body class="bg-light">
 
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
-<div class="container" style="margin-top:80px;">
+<div class="page-content">
     <div class="card shadow-sm p-4">
-        <h4 class="text-primary fw-bold mb-4">
-            📄 All Bills
-        </h4>
+        <h4 class="text-primary mb-4"><i class="fa fa-file-invoice"></i> All Bills</h4>
 
-<table id="billTable" class="table table-striped table-bordered">
-<thead class="table-primary">
-<tr>
-<th>#</th>
-<th>Bill Number</th>
-<th>Bill Type</th>
-<th>Received Date</th>
-<th>From Section</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody>
-<?php foreach($rows as $r): ?>
-<tr>
-<td><?= $r['Id'] ?></td>
-<td><?= htmlspecialchars($r['BillNumber']) ?></td>
-<td><?= htmlspecialchars($r['BillType']) ?></td>
-<td><?= $r['BillReceivedDate'] ?></td>
-<td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
-<td>
-
-<?php if ($r['Status'] === NULL): ?>
-
-    <a href="edit_bill_details.php?id=<?= $r['Id'] ?>"
-       class="btn btn-sm btn-success">
-       <i class="fa fa-edit"></i> Edit
-    </a>
-
-    <button class="btn btn-sm btn-danger deleteBill"
-            data-id="<?= $r['Id'] ?>">
-        <i class="fa fa-trash"></i> Delete
-    </button>
-
-<?php else: ?>
-
-    <button class="btn btn-sm btn-success" disabled>
-        <i class="fa fa-edit"></i> Edit
-    </button>
-
-    <button class="btn btn-sm btn-danger" disabled>
-        <i class="fa fa-trash"></i> Delete
-    </button>
-
-<?php endif; ?>
-
-</td>
-
-</tr>
-<?php endforeach; ?>
-</tbody>
-</table>
+        <table id="billTable" class="table table-striped table-bordered">
+            <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Bill Number</th>
+                <th>Received Date</th>
+                <th>From Section</th>
+                <th>Status</th>
+                <th>Invoices</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach($bills as $b): ?>
+                <tr>
+                    <td><?= $b['Id'] ?></td>
+                    <td><?= htmlspecialchars($b['BillNumber']) ?></td>
+                    <td><?= date('d-m-Y', strtotime($b['BillReceivedDate'])) ?></td>
+                    <td><?= htmlspecialchars($b['ReceivedFromSection']) ?></td>
+                    <td><?= htmlspecialchars($b['Status'] ?? 'DRAFT') ?></td>
+                    <td>
+                        <button class="btn btn-info btn-sm viewInvoices" data-id="<?= $b['Id'] ?>">
+                            <i class="fa fa-eye"></i> View
+                        </button>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-</div>
+<!-- Invoice Modal -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa fa-file-invoice"></i> Attached Invoices</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="invoiceDetails">
+                <div class="text-center text-muted">Loading...</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="../js/jquery-3.7.1.min.js"></script>
@@ -107,41 +95,16 @@ $rows = $conn->query("
 $(document).ready(function(){
     $('#billTable').DataTable({
         pageLength: 10,
-        order: [[0,'desc']],
-        dom: 'Bfrtip',
-        buttons: [
-            { extend: 'excel', text: '📥 Export Excel', className:'btn btn-success btn-sm' },
-            { extend: 'pdf', text: '📄 Export PDF', className:'btn btn-danger btn-sm' },
-            { extend: 'print', text: '🖨 Print', className:'btn btn-secondary btn-sm' }
-        ]
+        order: [[0,'desc']]
     });
 
-     $('.deleteBill').click(function(){
+    $('.viewInvoices').click(function(){
         let billId = $(this).data('id');
+        $('#invoiceDetails').html('<div class="text-center text-muted">Loading...</div>');
+        $('#invoiceModal').modal('show');
 
-        Swal.fire({
-            title: 'Delete this bill?',
-            text: 'This action cannot be undone!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, Delete',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if(result.isConfirmed){
-                $.post(
-                    'bill_delete.php',
-                    { id: billId },
-                    function(res){
-                        if(res.status === 'success'){
-                            Swal.fire('Deleted!', res.message, 'success')
-                                .then(()=> location.reload());
-                        }else{
-                            Swal.fire('Error', res.message, 'error');
-                        }
-                    },
-                    'json'
-                );
-            }
+        $.get('bill_invoices_ajax.php', {id: billId}, function(html){
+            $('#invoiceDetails').html(html);
         });
     });
 });
