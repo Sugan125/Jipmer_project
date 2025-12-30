@@ -38,7 +38,7 @@ $rows = $conn->query("
      ON p.BillId = b.Id
     AND p.Status = 'Pass'
  INNER JOIN bill_transactions t
-     ON t.BillId = bi.Id
+     ON t.BillId = b.Id
  WHERE b.Status = 'Transaction Done'
    AND NOT EXISTS (
          SELECT 1

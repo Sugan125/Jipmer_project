@@ -82,6 +82,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
                     <th>Received</th>
                     <th>Alloted To</th>
                     <th>Status</th>
+                    <th>Remarks</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -102,7 +103,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
                 <span class="badge bg-info text-dark"><?= $r['Status'] ?></span>
             <?php endif; ?>
         </td>
-
+        <td><?= htmlspecialchars($r['Remarks']) ?></td>
         <td>
             <button 
                 class="btn btn-sm btn-primary process-btn"

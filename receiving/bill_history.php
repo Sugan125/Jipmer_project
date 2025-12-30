@@ -26,7 +26,7 @@ $stmt = $conn->prepare("
     FROM bill_entry b
     INNER JOIN bill_initial_entry bi ON bi.Id = b.BillInitialId
     LEFT JOIN bill_type_master btm ON btm.Id = bi.BillTypeId
-    WHERE b.Id = ?
+    WHERE bi.Id = ?
 ");
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
