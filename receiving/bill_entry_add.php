@@ -11,14 +11,7 @@ $stmt = $conn->prepare("SELECT * FROM bill_initial_entry WHERE Id=?");
 $stmt->execute([$initial_id]);
 $init = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$totalAmount = 0;
-$totalGST = 0;
-$totalIT = 0;
-$totalTDS = 0;
-$grossTotal = 0;
-$netTotal = 0;
-
-
+$totalAmount = $totalGST = $totalIT = $totalTDS = $grossTotal = $netTotal = 0;
 
 // Fetch attached invoices
 $stmt = $conn->prepare("
@@ -49,7 +42,7 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
 .invoice-table th, .invoice-table td{vertical-align: middle;}
 .invoice-table tbody tr:hover{background:#f9f9f9;}
 .btn-view{color:#0d6efd;}
-.form-card{max-width:800px;margin:auto;}
+.form-card{max-width:900px;margin:auto;}
 .modal-xl .modal-body{max-height:70vh;overflow-y:auto;}
 </style>
 </head>
@@ -65,8 +58,8 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
     <h4 class="text-primary mb-3"><i class="fa fa-file-invoice"></i> Bill Details - <?= htmlspecialchars($init['BillNumber']) ?></h4>
     <div class="row">
         <div class="col-md-4"><strong>Bill Number:</strong> <?= htmlspecialchars($init['BillNumber']) ?></div>
-        <!-- <div class="col-md-4"><strong>Received From:</strong> <?= htmlspecialchars($init['ReceivedFromSection']) ?></div> -->
-        <div class="col-md-4"><strong>Received Date:</strong> <?= $init['BillReceivedDate'] ?></div>
+        <div class="col-md-4"><strong>Received Date:</strong> <?= date('d-m-Y', strtotime($init['BillReceivedDate'])) ?></div>
+        <div class="col-md-4"><strong>Received From:</strong> <?= htmlspecialchars($init['ReceivedFromSection'] ?? '-') ?></div>
     </div>
 </div>
 
@@ -84,18 +77,27 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
                     <th>Vendor</th>
                     <th>Department</th>
                     <th>Total Amount</th>
+                    <th>GST</th>
+                    <th>IT</th>
+                    <th>TDS</th>
+                    <th>Net Amount</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
             <?php foreach($invoices as $i => $inv): 
-                $totalAmount += $inv['Amount'] ?? 0;
-                $totalGST += $inv['GSTAmount'] ?? 0;
-                $totalIT += $inv['ITAmount'] ?? 0;
-                $totalTDS += $inv['TDS'] ?? 0;
-                $grossTotal += $inv['TotalAmount'] ?? 0;
-                // Net = TotalAmount + GST - IT - TDS (assuming this calculation)
-                $netTotal += (($inv['TotalAmount'] ?? 0) + ($inv['GSTAmount'] ?? 0) - ($inv['ITAmount'] ?? 0) - ($inv['TDS'] ?? 0));
+                $amount = floatval($inv['TotalAmount'] ?? 0);
+                $gst    = floatval($inv['GSTAmount'] ?? 0);
+                $it     = floatval($inv['ITAmount'] ?? 0);
+                $tds    = floatval($inv['TDS'] ?? 0);
+                $net    = $amount + $gst - $it - $tds;
+
+                $totalAmount += $amount;
+                $totalGST    += $gst;
+                $totalIT     += $it;
+                $totalTDS    += $tds;
+                $grossTotal  += $amount;
+                $netTotal    += $net;
             ?>
                 <tr>
                     <td><?= $i+1 ?></td>
@@ -103,7 +105,11 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
                     <td><?= date('d-m-Y', strtotime($inv['InvoiceDate'])) ?></td>
                     <td><?= htmlspecialchars($inv['VendorName']) ?></td>
                     <td><?= htmlspecialchars($inv['DeptName']) ?></td>
-                    <td><?= number_format($inv['TotalAmount'],2) ?></td>
+                    <td><?= number_format($amount,2) ?></td>
+                    <td><?= number_format($gst,2) ?></td>
+                    <td><?= number_format($it,2) ?></td>
+                    <td><?= number_format($tds,2) ?></td>
+                    <td><?= number_format($net,2) ?></td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-primary btn-view" data-id="<?= $inv['Id'] ?>" data-bs-toggle="modal" data-bs-target="#invoiceModal">
                             <i class="fa fa-eye"></i> View
@@ -113,19 +119,20 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
             <?php endforeach; ?>
             </tbody>
         </table>
-        <?php if($invoices): ?>
-<div class="mt-3 p-3 border bg-light">
-    <h6 class="text-primary"><i class="fa fa-calculator"></i> Invoice Totals</h6>
-    <div class="row">
-        <div class="col-md-2"><strong>Total Amount:</strong> <?= number_format($totalAmount,2) ?></div>
-        <div class="col-md-2"><strong>Total GST:</strong> <?= number_format($totalGST,2) ?></div>
-        <div class="col-md-2"><strong>Total IT:</strong> <?= number_format($totalIT,2) ?></div>
-        <div class="col-md-2"><strong>Total TDS:</strong> <?= number_format($totalTDS,2) ?></div>
-        <div class="col-md-2"><strong>Gross Total:</strong> <?= number_format($grossTotal,2) ?></div>
-        <div class="col-md-2"><strong>Net Total:</strong> <?= number_format($netTotal,2) ?></div>
-    </div>
-</div>
-<?php endif; ?>
+
+        <!-- Invoice Totals -->
+        <div class="mt-3 p-3 border bg-light rounded">
+            <h6 class="text-primary"><i class="fa fa-calculator"></i> Invoice Totals</h6>
+            <div class="row text-center">
+                <div class="col-md-2"><strong>Total Amount:</strong><br><?= number_format($totalAmount,2) ?></div>
+                <div class="col-md-2"><strong>Total GST:</strong><br><?= number_format($totalGST,2) ?></div>
+                <div class="col-md-2"><strong>Total IT:</strong><br><?= number_format($totalIT,2) ?></div>
+                <div class="col-md-2"><strong>Total TDS:</strong><br><?= number_format($totalTDS,2) ?></div>
+                <div class="col-md-2"><strong>Gross Total:</strong><br><?= number_format($grossTotal,2) ?></div>
+                <div class="col-md-2"><strong>Net Total:</strong><br><?= number_format($netTotal,2) ?></div>
+            </div>
+        </div>
+
     </div>
     <?php else: ?>
         <p class="text-muted">No invoices attached.</p>

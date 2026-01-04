@@ -2,11 +2,30 @@
 include '../config/db.php';
 include '../includes/auth.php';
 
-/* ===== Fetch All Bills ===== */
+/* ===== Fetch All Bills with totals and alloted employee ===== */
 $bills = $conn->query("
-    SELECT Id, BillNumber, BillReceivedDate, ReceivedFromSection, Status
-    FROM bill_initial_entry
-    ORDER BY CreatedDate DESC
+    SELECT 
+        bi.Id,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        im.ReceivedFromSection,
+        bi.Status,
+        e.EmployeeName AS AllotedTo,
+        btm.BillType,
+        -- Aggregate totals from invoices
+        SUM(im.TotalAmount) AS TotalAmount,
+        SUM(im.GSTAmount) AS TotalGST,
+        SUM(im.ITAmount) AS TotalIT,
+        SUM(im.TDS) AS TotalTDS,
+        SUM(im.TotalAmount + COALESCE(im.GSTAmount,0) - COALESCE(im.ITAmount,0) - COALESCE(im.TDS,0)) AS NetAmount
+    FROM bill_initial_entry bi
+    LEFT JOIN bill_entry be ON be.BillInitialId = bi.Id
+    LEFT JOIN employee_master e ON be.AllotedDealingAsst = e.Id
+    LEFT JOIN bill_invoice_map bim ON bim.BillInitialId = bi.Id
+    LEFT JOIN invoice_master im ON im.Id = bim.InvoiceId
+    LEFT JOIN bill_type_master btm ON btm.Id = im.BillTypeId
+    GROUP BY bi.Id, bi.BillNumber,bi.CreatedDate, bi.BillReceivedDate, im.ReceivedFromSection, bi.Status, e.EmployeeName, btm.BillType
+    ORDER BY bi.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -16,7 +35,6 @@ $bills = $conn->query("
 <meta charset="UTF-8">
 <title>All Bills</title>
 
-<!-- Bootstrap & FontAwesome -->
 <link rel="stylesheet" href="../css/bootstrap.min.css">
 <link rel="stylesheet" href="../css/all.min.css">
 <link rel="stylesheet" href="../css/style.css">
@@ -24,10 +42,8 @@ $bills = $conn->query("
 
 <style>
 .page-content { margin-left:240px; padding:50px 30px; }
-.card { max-width:1200px; margin:auto; }
+.card { max-width:1400px; margin:auto; }
 .modal-lg { max-width: 90% !important; }
-.invoice-card { border:1px solid #ddd; padding:15px; margin-bottom:10px; border-radius:8px; background:#f9f9f9; }
-.invoice-header { background:#007bff; color:#fff; padding:8px 15px; border-radius:5px; margin-bottom:10px; }
 </style>
 </head>
 <body class="bg-light">
@@ -44,9 +60,16 @@ $bills = $conn->query("
             <tr>
                 <th>#</th>
                 <th>Bill Number</th>
+                <th>Bill Type</th>
                 <th>Received Date</th>
                 <th>From Section</th>
+                <th>Alloted To</th>
                 <th>Status</th>
+                <th>Total Amount</th>
+                <th>Total GST</th>
+                <th>Total IT</th>
+                <th>Total TDS</th>
+                <th>Net Amount</th>
                 <th>Invoices</th>
             </tr>
             </thead>
@@ -55,9 +78,16 @@ $bills = $conn->query("
                 <tr>
                     <td><?= $b['Id'] ?></td>
                     <td><?= htmlspecialchars($b['BillNumber']) ?></td>
-                    <td><?= date('d-m-Y', strtotime($b['BillReceivedDate'])) ?></td>
+                    <td><?= htmlspecialchars($b['BillType'] ?? '-') ?></td>
+                    <td><?= $b['BillReceivedDate'] ? date('d-m-Y', strtotime($b['BillReceivedDate'])) : '-' ?></td>
                     <td><?= htmlspecialchars($b['ReceivedFromSection']) ?></td>
+                    <td><?= htmlspecialchars($b['AllotedTo'] ?? '-') ?></td>
                     <td><?= htmlspecialchars($b['Status'] ?? 'DRAFT') ?></td>
+                    <td class="text-end"><?= number_format($b['TotalAmount'] ?? 0,2) ?></td>
+                    <td class="text-end"><?= number_format($b['TotalGST'] ?? 0,2) ?></td>
+                    <td class="text-end"><?= number_format($b['TotalIT'] ?? 0,2) ?></td>
+                    <td class="text-end"><?= number_format($b['TotalTDS'] ?? 0,2) ?></td>
+                    <td class="text-end"><?= number_format($b['NetAmount'] ?? 0,2) ?></td>
                     <td>
                         <button class="btn btn-info btn-sm viewInvoices" data-id="<?= $b['Id'] ?>">
                             <i class="fa fa-eye"></i> View
@@ -103,6 +133,7 @@ $(document).ready(function(){
         $('#invoiceDetails').html('<div class="text-center text-muted">Loading...</div>');
         $('#invoiceModal').modal('show');
 
+        // Load invoice_view.php in modal
         $.get('bill_invoices_ajax.php', {id: billId}, function(html){
             $('#invoiceDetails').html(html);
         });

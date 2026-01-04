@@ -24,10 +24,11 @@ if(!$bill){
 
 // Fetch attached invoices and calculate total
 $stmt = $conn->prepare("
-    SELECT im.*, d.DeptName
+    SELECT im.*, d.DeptName, bi.Id as billId
     FROM invoice_master im
     LEFT JOIN bill_invoice_map bim ON bim.InvoiceId = im.Id
     LEFT JOIN dept_master d ON d.Id = im.DeptId
+    LEFT JOIN bill_initial_entry bi ON bi.Id = bim.BillInitialId
     WHERE bim.BillInitialId = ?
     ORDER BY im.InvoiceDate DESC
 ");
@@ -89,6 +90,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
                         <th>Vendor</th>
                         <th>Department</th>
                         <th>Total Amount</th>
+                        <th>View</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -100,6 +102,11 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
                         <td><?= htmlspecialchars($inv['VendorName']) ?></td>
                         <td><?= htmlspecialchars($inv['DeptName']) ?></td>
                         <td><?= number_format($inv['TotalAmount'],2) ?></td>
+                          <td>
+                        <button class="btn btn-info btn-sm viewInvoices" data-id="<?= $inv['billId'] ?>">
+                            <i class="fa fa-eye"></i> View
+                        </button>
+                    </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -141,9 +148,31 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
         </form>
     </div>
 </div>
-
+<!-- Invoice Modal -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa fa-file-invoice"></i> Attached Invoices</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="invoiceDetails">
+                <div class="text-center text-muted">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 $(document).ready(function(){
+    $('.viewInvoices').click(function(){
+        let billId = $(this).data('id');
+        $('#invoiceDetails').html('<div class="text-center text-muted">Loading...</div>');
+        $('#invoiceModal').modal('show');
+
+        $.get('../receiving/bill_invoices_ajax.php', {id: billId}, function(html){
+            $('#invoiceDetails').html(html);
+        });
+    });
     $('#status').on('change', function(){
         if(this.value === 'Return'){
             $('#returnReasonDiv').show();

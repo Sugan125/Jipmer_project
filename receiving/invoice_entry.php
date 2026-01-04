@@ -24,6 +24,7 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
 .card{max-width:1200px;margin:auto;}
 .section-card{border:1px solid #dee2e6;border-radius:8px;padding:15px;margin-bottom:20px;background:#f9f9f9;}
 .section-title{font-weight:600;color:#007bff;margin-bottom:15px;}
+small { color:green; font-weight: 600 }
 </style>
 </head>
 <body class="bg-light">
@@ -88,15 +89,97 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
 </div>
 </div>
 
+<div class="section-card">
+<div class="section-title">PO Details</div>
+<div class="row g-3">
+
+<div class="col-md-3">
+<label>PO Amount</label>
+<input type="number" step="0.01" id="po_amount" name="POAmount" class="form-control">
+<small class="text-muted" id="po_base"></small>
+</div>
+
+<div class="col-md-3">
+<label>PO GST %</label>
+<input type="number" max="100" step="0.01" id="po_gst_p" name="POGSTPercent" class="form-control">
+<small id="po_gst_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>PO IT %</label>
+<input type="number" max="100" step="0.01" id="po_it_p" name="POITPercent" class="form-control">
+<small id="po_it_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>TDS GST %</label>
+<input type="number" max="100" step="0.01" id="po_tds_gst_p" name="TDSPoGSTPercent" class="form-control">
+<small id="po_tds_gst_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>TDS IT % (2 or 10)</label>
+<input type="number" id="po_tds_it_p" name="TDSPoITPercent" class="form-control">
+<small id="po_tds_it_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>PO Net Total</label>
+<input readonly id="po_net_total" class="form-control">
+</div>
+
+</div>
+</div>
+
 <!-- Section 3: Amounts & Calculations -->
 <div class="section-card">
 <div class="section-title">Amount Details & Calculations</div>
 <div class="row g-3">
-    <div class="col-md-3"><label>Amount</label><input type="number" step="0.01" id="amount" name="Amount" class="form-control" required></div>
-    <div class="col-md-3"><label>GST %</label><input type="number" step="0.01" id="gstp" name="GSTPercent" class="form-control"></div>
-    <div class="col-md-3"><label>IT %</label><input type="number" step="0.01" id="itp" name="ITPercent" class="form-control"></div>
-    <div class="col-md-3"><label>TDS</label><input type="number" step="0.01" id="tds" name="TDS" class="form-control"></div>
-    <div class="col-md-3"><label>Total Amount</label><input id="total" name="TotalAmount" class="form-control" readonly></div>
+
+<div class="col-md-3">
+<label>Amount</label>
+<input type="number" step="0.01" id="amount" name="Amount" class="form-control">
+</div>
+
+<div class="col-md-3">
+<label>GST %</label>
+<input type="number" step="0.01" id="gstp" name="GSTPercent" class="form-control">
+<small id="gst_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>IT %</label>
+<input type="number" step="0.01" id="itp" name="ITPercent" class="form-control">
+<small id="it_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>TDS GST %</label>
+<input type="number" step="0.01" id="tds_gst_p" name="TDSGSTPercent" class="form-control">
+<small id="tds_gst_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>TDS IT % (2 or 10)</label>
+<input type="number" id="tds_it_p" name="TDSITPercent" class="form-control">
+<small id="tds_it_amt"></small>
+</div>
+
+<div class="col-md-3">
+<label>Invoice Total</label>
+<input readonly id="invoice_total" class="form-control">
+</div>
+
+<div class="col-md-3">
+<label>TDS Total</label>
+<input readonly id="tds_total" class="form-control">
+</div>
+
+<div class="col-md-3">
+<label>Net Payable</label>
+<input readonly id="net_payable" name="NetPayable" class="form-control">
+</div>
+
 </div>
 </div>
 
@@ -180,7 +263,71 @@ function calc(){
     $('#total').val((amt+gst-it-tds).toFixed(2));
 }
 $('#amount,#gstp,#itp,#tds').on('input',calc);
+function percentCalc(base,p){ return (base*p/100)||0; }
 
+function calcPO(){
+ let a=+$('#po_amount').val()||0;
+ let gst=percentCalc(a,+$('#po_gst_p').val());
+ let it=percentCalc(a,+$('#po_it_p').val());
+ let tdsG=percentCalc(a,+$('#po_tds_gst_p').val());
+ let tdsI=percentCalc(a,+$('#po_tds_it_p').val());
+
+ 
+ $('#po_gst_amt').text('GST: '+gst.toFixed(2));
+ $('#po_it_amt').text('IT: '+it.toFixed(2));
+ $('#po_tds_gst_amt').text('TDS GST: '+tdsG.toFixed(2));
+ $('#po_tds_it_amt').text('TDS IT: '+tdsI.toFixed(2));
+
+ $('#po_net_total').val((a+gst+it-tdsG-tdsI).toFixed(2));
+}
+$('#po_tds_it_p').on('blur', function () {
+    let val = +this.value;
+
+    if (val !== 2 && val !== 10 && val !== 0 && this.value !== '') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid TDS IT %',
+            text: 'Only 2% or 10% is allowed'
+        });
+        this.value = '';
+        this.focus();
+    }
+});
+function calcInvoice(){
+ let a=+$('#amount').val()||0;
+ let gst=percentCalc(a,+$('#gstp').val());
+ let it=percentCalc(a,+$('#itp').val());
+ let tdsG=percentCalc(a,+$('#tds_gst_p').val());
+ let tdsI=percentCalc(a,+$('#tds_it_p').val());
+
+
+
+ let total=a+gst+it;
+ let tdsTotal=tdsG+tdsI;
+
+ $('#gst_amt').text('GST: '+gst.toFixed(2));
+ $('#it_amt').text('IT: '+it.toFixed(2));
+ $('#tds_gst_amt').text('TDS GST: '+tdsG.toFixed(2));
+ $('#tds_it_amt').text('TDS IT: '+tdsI.toFixed(2));
+
+ $('#invoice_total').val(total.toFixed(2));
+ $('#tds_total').val(tdsTotal.toFixed(2));
+ $('#net_payable').val((total-tdsTotal).toFixed(2));
+}
+$('#tds_it_p').on('blur', function () {
+    let val = +this.value;
+
+    if (val !== 2 && val !== 10 && val !== 0 && this.value !== '') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid TDS IT %',
+            text: 'Only 2% or 10% is allowed'
+        });
+        this.value = '';
+        this.focus();
+    }
+});
+$('input').on('input',function(){ calcPO(); calcInvoice(); });
 // Form Submit
 $('#invoiceForm').submit(function(e){
  e.preventDefault();

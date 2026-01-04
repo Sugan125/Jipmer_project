@@ -58,7 +58,8 @@ $invoices = $conn->query("
 <td><?= date('d-m-Y', strtotime($inv['InvoiceDate'])) ?></td>
 <td><?= $inv['VendorName'] ?></td>
 <td><?= $inv['DeptName'] ?></td>
-<td><?= number_format($inv['TotalAmount'],2) ?></td>
+<td><?= number_format(!empty($inv['TotalAmount']) ? $inv['TotalAmount'] : 0, 2) ?></td>
+
 <td><i class="fa fa-eye view-btn" data-id="<?= $inv['Id'] ?>" title="View Invoice"></i></td>
 </tr>
 <?php endforeach; ?>
