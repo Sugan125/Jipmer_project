@@ -1,0 +1,106 @@
+<?php
+ini_set('display_errors',1);
+error_reporting(E_ALL);
+
+include '../config/db.php';
+include '../includes/auth.php';
+
+header('Content-Type: application/json');
+
+try{
+
+    $conn->beginTransaction();
+
+    /* ================= PO CALCULATIONS ================= */
+    $poAmount = (float) $_POST['POAmount'];
+    $poGstP   = (float) $_POST['POGSTPercent'];
+    $poItP    = (float) $_POST['POITPercent'];
+
+    $poGstAmt = $poAmount * $poGstP / 100;
+    $poItAmt  = $poAmount * $poItP / 100;
+    $poNetAmt = $poAmount + $poGstAmt + $poItAmt;
+
+    /* ================= SAVE PO MASTER ================= */
+    $poStmt = $conn->prepare("
+        INSERT INTO po_master
+        (
+            POOrderNo,
+            POOrderDate,
+            POAmount,
+            POGSTPercent,
+            POITPercent,
+            PONetAmount,
+            CreatedBy
+        )
+        VALUES (?,?,?,?,?,?,?)
+    ");
+
+    $poStmt->execute([
+        $_POST['PONumber'],
+        $_POST['PODate'],
+        $poAmount,
+        $poGstP,
+        $poItP,
+        $poNetAmt,
+        $_SESSION['user_id']
+    ]);
+
+    $poId = $conn->lastInsertId();
+
+    /* ================= SAVE SANCTION ORDERS ================= */
+    $sanStmt = $conn->prepare("
+        INSERT INTO sanction_order_master
+        (
+            POId,
+            SanctionOrderNo,
+            SanctionDate,
+            SanctionAmount,
+            GSTPercent,
+            GSTAmount,
+            ITPercent,
+            ITAmount,
+            SanctionNetAmount,
+            CreatedBy
+        )
+        VALUES (?,?,?,?,?,?,?,?,?,?)
+    ");
+
+    for($i = 0; $i < count($_POST['SanctionNo']); $i++){
+
+        if (empty($_POST['SanctionAmount'][$i])) continue;
+
+        $amount = (float) $_POST['SanctionAmount'][$i];
+
+        // GST & IT SAME AS PO (READONLY IN UI)
+        $gstP = $poGstP;
+        $itP  = $poItP;
+
+        $gstAmt = $amount * $gstP / 100;
+        $itAmt  = $amount * $itP / 100;
+        $netAmt = $amount + $gstAmt + $itAmt;
+
+        $sanStmt->execute([
+            $poId,
+            $_POST['SanctionNo'][$i],
+            $_POST['SanctionDate'][$i],
+            $amount,
+            $gstP,
+            $gstAmt,
+            $itP,
+            $itAmt,
+            $netAmt,
+            $_SESSION['user_id']
+        ]);
+    }
+
+    $conn->commit();
+
+    echo json_encode(['status'=>'success']);
+
+}catch(Exception $e){
+    $conn->rollBack();
+    echo json_encode([
+        'status'=>'error',
+        'message'=>$e->getMessage()
+    ]);
+}

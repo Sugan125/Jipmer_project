@@ -82,55 +82,29 @@ small { color:green; font-weight: 600 }
 <div class="row g-3">
     <div class="col-md-3"><label>Invoice No</label><input name="InvoiceNo" class="form-control" required></div>
     <div class="col-md-3"><label>Invoice Date</label><input type="date" name="InvoiceDate" class="form-control" required></div>
-    <div class="col-md-3"><label>Sanction Order No</label><input type="text" name="SanctionOrderNo" class="form-control"></div>
-    <div class="col-md-3"><label>Sanction Date</label><input type="date" name="SanctionDate" class="form-control"></div>
-    <div class="col-md-3"><label>PO Order No</label><input name="POOrderNo" class="form-control"></div>
-    <div class="col-md-3"><label>PO Order Date</label><input type="date" name="POOrderDate" class="form-control"></div>
 </div>
 </div>
 
+<!-- Section: PO & Sanction Mapping -->
 <div class="section-card">
-<div class="section-title">PO Details</div>
+<div class="section-title">PO & Sanction Mapping</div>
+
 <div class="row g-3">
+    <div class="col-md-4">
+        <label>Purchase Order</label>
+        <select name="POId" id="po_id" class="form-select" required>
+            <option value="">-- Select PO --</option>
+        </select>
+    </div>
 
-<div class="col-md-3">
-<label>PO Amount</label>
-<input type="number" step="0.01" id="po_amount" name="POAmount" class="form-control">
-<small class="text-muted" id="po_base"></small>
-</div>
-
-<div class="col-md-3">
-<label>PO GST %</label>
-<input type="number" max="100" step="0.01" id="po_gst_p" name="POGSTPercent" class="form-control">
-<small id="po_gst_amt"></small>
-</div>
-
-<div class="col-md-3">
-<label>PO IT %</label>
-<input type="number" max="100" step="0.01" id="po_it_p" name="POITPercent" class="form-control">
-<small id="po_it_amt"></small>
-</div>
-
-<div class="col-md-3">
-<label>TDS GST %</label>
-<input type="number" max="100" step="0.01" id="po_tds_gst_p" name="TDSPoGSTPercent" class="form-control">
-<small id="po_tds_gst_amt"></small>
-</div>
-
-<div class="col-md-3">
-<label>TDS IT % (2 or 10)</label>
-<input type="number" id="po_tds_it_p" name="TDSPoITPercent" class="form-control">
-<small id="po_tds_it_amt"></small>
-</div>
-
-<div class="col-md-3">
-<label>PO Net Total</label>
-<input readonly id="po_net_total" class="form-control">
-</div>
-
+    <div class="col-md-4">
+        <label>Sanction Order</label>
+        <select name="SanctionId" id="sanction_id" class="form-select" required>
+            <option value="">-- Select Sanction --</option>
+        </select>
+    </div>
 </div>
 </div>
-
 <!-- Section 3: Amounts & Calculations -->
 <div class="section-card">
 <div class="section-title">Amount Details & Calculations</div>
@@ -345,6 +319,40 @@ $('#invoiceForm').submit(function(e){
   }else Swal.fire('Error',r.message,'error');
  },'json');
 });
+
+
+function loadPO(){
+    $.getJSON('get_po_list.php', function(res){
+        let opt = '<option value="">-- Select PO --</option>';
+        $.each(res, function(i,row){
+            opt += `<option value="${row.Id}">${row.POOrderNo}</option>`;
+        });
+        $('#po_id').html(opt);
+    });
+}
+
+/* ================= LOAD SANCTION BY PO ================= */
+$('#po_id').change(function(){
+    let poId = $(this).val();
+    $('#sanction_id').html('<option value="">Loading...</option>');
+
+    if(!poId){
+        $('#sanction_id').html('<option value="">-- Select Sanction --</option>');
+        return;
+    }
+
+    $.getJSON('get_sanction_by_po.php',{POId:poId}, function(res){
+        let opt = '<option value="">-- Select Sanction --</option>';
+        $.each(res,function(i,row){
+            opt += `<option value="${row.Id}">
+                        ${row.SanctionOrderNo} | ₹${row.SanctionNetAmount}
+                    </option>`;
+        });
+        $('#sanction_id').html(opt);
+    });
+});
+
+$(document).ready(loadPO);
 </script>
 </body>
 </html>
