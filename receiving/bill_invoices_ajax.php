@@ -7,32 +7,15 @@ if(!$billId) exit('<div class="text-center text-danger">Invalid Bill ID</div>');
 
 // Fetch attached invoices with full details
 $invoices = $conn->prepare("
-    SELECT 
-        i.*, 
-        d.DeptName, 
-        b.BillType, 
-        c.CreditName, 
-        de.DebitName,
-        h.DetailsHeadCode + ' - ' + h.DetailsHeadName + ' / ' + h.SubDetailsHeadName AS HOA_NAME,
-        s.SanctionOrderNo,
-        s.SanctionDate,
-        p.POOrderNo,
-        p.POAmount,
-        p.POGSTPercent,
-        p.POITPercent,
-        i.TDSGSTPercent,
-        i.TDSGSTAmount,
-        i.TDSITPercent,
-        i.TDSITAmount
+    SELECT i.*, d.DeptName, b.BillType, c.CreditName, de.DebitName,
+           h.DetailsHeadCode + ' - ' + h.DetailsHeadName + ' / ' + h.SubDetailsHeadName AS HOA_NAME
     FROM invoice_master i
-    INNER JOIN bill_invoice_map bim ON i.Id = bim.InvoiceId
     LEFT JOIN dept_master d ON i.DeptId = d.Id
     LEFT JOIN bill_type_master b ON i.BillTypeId = b.Id
     LEFT JOIN account_credit_master c ON i.CreditToId = c.Id
     LEFT JOIN account_debit_master de ON i.DebitFromId = de.Id
     LEFT JOIN hoa_master h ON i.HOAId = h.HoaId
-    LEFT JOIN sanction_order_master s ON i.SanctionId = s.Id
-    LEFT JOIN po_master p ON i.POId = p.Id
+    INNER JOIN bill_invoice_map bim ON i.Id = bim.InvoiceId
     WHERE bim.BillInitialId = ?
     ORDER BY i.InvoiceDate DESC
 ");
@@ -103,7 +86,20 @@ foreach($invoices as $inv):
             </div>
         </div>
 
-     
+        <!-- TAB 3: PO & TDS -->
+        <div class="tab-pane fade" id="tab-po-<?= $inv['Id'] ?>">
+            <div class="row mb-2">
+                <div class="col-md-3"><strong>PO Amount:</strong> ₹ <?= nf($inv['POAmount']) ?></div>
+                <div class="col-md-3"><strong>PO GST (<?= $inv['POGSTPercent'] ?>%):</strong> ₹ <?= nf($inv['POGSTAmount']) ?></div>
+                <div class="col-md-3"><strong>PO IT (<?= $inv['POITPercent'] ?>%):</strong> ₹ <?= nf($inv['POITAmount']) ?></div>
+                <div class="col-md-3"><strong>PO Total:</strong> ₹ <?= nf($inv['POAmount'] + $inv['POGSTAmount'] + $inv['POITAmount']) ?></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-3"><strong>TDS PO GST (<?= $inv['TDSPoGSTPercent'] ?>%):</strong> ₹ <?= nf($inv['TDSPoGSTAmount']) ?></div>
+                <div class="col-md-3"><strong>TDS PO IT (<?= $inv['TDSPoITPercent'] ?>%):</strong> ₹ <?= nf($inv['TDSPoITAmount']) ?></div>
+                <div class="col-md-3"><strong>PO Net Payable:</strong> ₹ <?= nf($inv['POAmount'] + $inv['POGSTAmount'] + $inv['POITAmount'] - ($inv['TDSPoGSTAmount'] + $inv['TDSPoITAmount'])) ?></div>
+            </div>
+        </div>
 
         <!-- TAB 4: Bank & Other -->
         <div class="tab-pane fade" id="tab-bank-<?= $inv['Id'] ?>">
@@ -115,7 +111,7 @@ foreach($invoices as $inv):
             <div class="row mb-2">
                 <div class="col-md-4"><strong>Received From Section:</strong> <?= htmlspecialchars($inv['ReceivedFromSection']) ?></div>
                 <div class="col-md-4"><strong>Section DA Name:</strong> <?= htmlspecialchars($inv['SectionDAName']) ?></div>
-                
+                <div class="col-md-4"><strong>PFMS No:</strong> <?= htmlspecialchars($inv['PFMSUniqueNo']) ?></div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-4"><strong>Credit To:</strong> <?= $inv['CreditName'] ?></div>

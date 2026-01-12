@@ -7,6 +7,7 @@ $rows = $conn->query("
     SELECT 
         bi.Id,
         COALESCE(bi.BillNumber,'— Draft —') AS BillNumber,
+        COALESCE(btm.BillType,'Draft') AS BillType,
         bi.BillReceivedDate,
         im.ReceivedFromSection,
         e.EmployeeName AS AllotedName,
@@ -16,14 +17,20 @@ $rows = $conn->query("
         SUM(im.ITAmount) AS TotalIT,
         SUM(im.TDSGSTAmount + im.TDSITAmount) AS TotalTDS,
         SUM(im.TotalAmount) AS GrossTotal,
-        SUM(im.NetPayable) AS NetTotal
+        SUM(im.NetPayable) AS NetTotal,
+        SUM(im.POAmount) AS POTotal,
+        SUM(im.POGSTAmount) AS POGSTTotal,
+        SUM(im.POITAmount) AS POITTotal,
+        SUM(im.POAmount + im.POGSTAmount + im.POITAmount) AS POTotalGross,
+        SUM(im.POAmount + im.POGSTAmount + im.POITAmount - (im.TDSPoGSTAmount + im.TDSPoITAmount)) AS POTotalNet
     FROM bill_initial_entry bi
     LEFT JOIN bill_entry b ON bi.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
+    LEFT JOIN bill_type_master btm ON btm.Id = bi.BillTypeId
     LEFT JOIN bill_invoice_map bim ON bim.BillInitialId = bi.Id
     LEFT JOIN invoice_master im ON im.Id = bim.InvoiceId
     GROUP BY 
-    bi.Id, b.Status, bi.BillNumber,bi.CreatedDate, bi.BillReceivedDate, im.ReceivedFromSection, e.EmployeeName
+    bi.Id, b.Status, bi.BillNumber,bi.CreatedDate, bi.BillReceivedDate, im.ReceivedFromSection, e.EmployeeName, btm.BillType
 ORDER BY bi.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -71,6 +78,11 @@ body{background:#f8f9fa;}
                     <th>Total TDS</th>
                     <th>Gross Total</th>
                     <th>Net Payable</th>
+                    <th>PO Amount</th>
+                    <th>PO GST</th>
+                    <th>PO IT</th>
+                    <th>PO Gross</th>
+                    <th>PO Net Payable</th>
                     <th>History / Action</th>
                 </tr>
             </thead>
@@ -80,6 +92,7 @@ body{background:#f8f9fa;}
                 <tr class="text-center">
                     <td><?= $r['Id'] ?></td>
                     <td><?= htmlspecialchars($r['BillNumber']) ?></td>
+                    <td><?= htmlspecialchars($r['BillType']) ?></td>
                     <td><?= $r['BillReceivedDate'] ? date('d-m-Y', strtotime($r['BillReceivedDate'])) : '-' ?></td>
                     <td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
                     <td><?= htmlspecialchars($r['AllotedName'] ?? '-') ?></td>
@@ -91,6 +104,12 @@ body{background:#f8f9fa;}
                     <td>₹ <?= number_format($r['TotalTDS'] ?? 0,2) ?></td>
                     <td>₹ <?= number_format($r['GrossTotal'] ?? 0,2) ?></td>
                     <td>₹ <?= number_format($r['NetTotal'] ?? 0,2) ?></td>
+
+                    <td>₹ <?= number_format($r['POTotal'] ?? 0,2) ?></td>
+                    <td>₹ <?= number_format($r['POGSTTotal'] ?? 0,2) ?></td>
+                    <td>₹ <?= number_format($r['POITTotal'] ?? 0,2) ?></td>
+                    <td>₹ <?= number_format($r['POTotalGross'] ?? 0,2) ?></td>
+                    <td>₹ <?= number_format($r['POTotalNet'] ?? 0,2) ?></td>
 
                     <td>
                         <?php if ($r['Status'] === NULL): ?>
