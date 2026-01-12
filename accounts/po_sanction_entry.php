@@ -8,16 +8,19 @@ include '../includes/auth.php';
 <html>
 <head>
 <title>PO & Sanction Order Entry</title>
+
 <link rel="stylesheet" href="../css/bootstrap.min.css">
 <link rel="stylesheet" href="../css/all.min.css">
 <link rel="stylesheet" href="../css/style.css">
+
 <style>
 .page-content{margin-left:240px;padding:50px 30px;}
 .card{max-width:1100px;margin:auto;}
 .section-card{border:1px solid #dee2e6;border-radius:8px;padding:20px;margin-bottom:25px;background:#f9f9f9;}
 .section-title{font-weight:600;color:#0d6efd;margin-bottom:15px;}
 small{color:#198754;font-weight:600;}
-.table td, .table th{vertical-align:middle;}
+.table td,.table th{vertical-align:middle;}
+.balance{font-weight:700;color:#dc3545;}
 </style>
 </head>
 
@@ -35,6 +38,7 @@ small{color:#198754;font-weight:600;}
 
 <form id="poForm">
 
+<!-- ================= PO DETAILS ================= -->
 <div class="section-card">
 <div class="section-title">Purchase Order (PO) Details</div>
 
@@ -54,8 +58,6 @@ small{color:#198754;font-weight:600;}
         <input type="number" step="0.01" id="po_amount" name="POAmount" class="form-control" required>
     </div>
 
-  
-
     <div class="col-md-3">
         <label>PO GST %</label>
         <input type="number" step="0.01" max="100" id="po_gst_p" name="POGSTPercent" class="form-control">
@@ -68,9 +70,14 @@ small{color:#198754;font-weight:600;}
         <small id="po_it_amt"></small>
     </div>
 
-      <div class="col-md-3">
+    <div class="col-md-3">
         <label>PO Net Total</label>
         <input readonly id="po_net_total" class="form-control bg-light fw-bold">
+    </div>
+
+    <div class="col-md-3">
+        <label>Remaining Balance</label>
+        <input readonly id="remaining_balance" class="form-control bg-light balance">
     </div>
 </div>
 </div>
@@ -105,7 +112,7 @@ small{color:#198754;font-weight:600;}
 </div>
 
 <div class="text-end">
-    <button class="btn btn-success">
+    <button type="submit" class="btn btn-success">
         <i class="fa fa-save"></i> Save PO & Sanctions
     </button>
 </div>
@@ -132,6 +139,7 @@ function calcPO(){
 
  $('.sgstp').val($('#po_gst_p').val());
  $('.sitp').val($('#po_it_p').val());
+
  calcSanction();
 }
 
@@ -154,6 +162,8 @@ function addRow(){
 }
 
 function calcSanction(){
+ let total=0;
+
  $('#sanctionTable tbody tr').each(function(){
   let amt = +$(this).find('.samt').val()||0;
   let gp  = +$('#po_gst_p').val()||0;
@@ -165,26 +175,52 @@ function calcSanction(){
   $(this).find('.sgsta').text(gst.toFixed(2));
   $(this).find('.sita').text(it.toFixed(2));
   $(this).find('.snet').text((amt+gst+it).toFixed(2));
+
+  total += amt;
  });
+
+ let po = +$('#po_amount').val()||0;
+ let bal = po - total;
+
+ $('#remaining_balance').val(bal.toFixed(2));
+
+ if(total > po){
+     Swal.fire('Error','Total Sanction Amount exceeds PO Amount','error');
+     $('button[type="submit"]').prop('disabled',true);
+ } else {
+     $('button[type="submit"]').prop('disabled',false);
+ }
 }
 
+/* ================= EVENTS ================= */
 $('#po_amount,#po_gst_p,#po_it_p').on('input',calcPO);
 $('#addRow').click(addRow);
 $(document).on('input','.samt',calcSanction);
-$(document).on('click','.remove',function(){ $(this).closest('tr').remove(); });
+$(document).on('click','.remove',function(){
+    $(this).closest('tr').remove();
+    calcSanction();
+});
 
-addRow();
-
+/* ================= SUBMIT ================= */
 $('#poForm').submit(function(e){
-    e.preventDefault();
+ e.preventDefault();
 
-    $.ajax({
-        url: 'po_sanction_submit.php',
-        type: 'POST',
-        data: $(this).serialize(),
-        dataType: 'json',
-        success: function(res){
-            if(res.status === 'success'){
+ let po = +$('#po_amount').val()||0;
+ let total=0;
+ $('.samt').each(function(){ total+=+$(this).val()||0; });
+
+ if(total > po){
+    Swal.fire('Error','Total Sanction Amount exceeds PO Amount','error');
+    return;
+ }
+
+ $.ajax({
+    url:'po_sanction_submit.php',
+    type:'POST',
+    data:$(this).serialize(),
+    dataType:'json',
+    success:function(res){
+       if(res.status === 'success'){
                 Swal.fire({
                     icon: 'success',
                     title: 'Saved!',
@@ -201,7 +237,7 @@ $('#poForm').submit(function(e){
                     confirmButtonText: 'OK'
                 });
             }
-        },
+    },
         error: function(xhr, status, error){
             Swal.fire({
                 icon: 'error',
@@ -210,10 +246,10 @@ $('#poForm').submit(function(e){
                 confirmButtonText: 'OK'
             });
         }
-    });
+ });
 });
 
-
+addRow();
 </script>
 
 </body>

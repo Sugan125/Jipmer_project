@@ -97,13 +97,36 @@ small { color:green; font-weight: 600 }
         </select>
     </div>
 
+    
+
     <div class="col-md-4">
         <label>Sanction Order</label>
         <select name="SanctionId" id="sanction_id" class="form-select" required>
             <option value="">-- Select Sanction --</option>
         </select>
     </div>
+
+    <div class="col-md-4">
+    <label>Available Sanction Balance</label>
+    <input readonly id="sanction_balance" class="form-control fw-bold text-success">
 </div>
+</div>
+</div>
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <label>Total Sanction Amount</label>
+        <input id="po_total_sanction" class="form-control fw-bold text-primary" readonly>
+    </div>
+
+    <div class="col-md-4">
+        <label>Already Billed Amount</label>
+        <input id="po_billed_amount" class="form-control fw-bold text-danger" readonly>
+    </div>
+
+    <div class="col-md-4">
+        <label>Available Sanction Balance</label>
+        <input id="po_available_balance" class="form-control fw-bold text-success" readonly>
+    </div>
 </div>
 <!-- Section 3: Amounts & Calculations -->
 <div class="section-card">
@@ -208,151 +231,134 @@ small { color:green; font-weight: 600 }
 </form>
 </div>
 </div>
-
 <script src="../js/jquery-3.7.1.min.js"></script>
 <script src="../js/sweetalert2.all.min.js"></script>
+
 <script>
-// Load HOA dynamically
+/* ================= LOAD HOA ================= */
 function loadHOA(finYearId){
-    $('#hoa').html('<option value="">Loading...</option>');
+    $('#hoa').html('<option>Loading...</option>');
     $.getJSON('../processing/get_hoa_by_fy.php', { FinYearId: finYearId }, function(res){
         let opt = '<option value="">-- Select HOA --</option>';
-        $.each(res, function(i, row){
+        $.each(res, function(i,row){
             opt += `<option value="${row.id}">${row.text}</option>`;
         });
         $('#hoa').html(opt);
     });
 }
-$('#finYear').change(function(){ let fy = $(this).val(); if(fy) loadHOA(fy); else $('#hoa').html('<option value="">-- Select HOA --</option>'); });
-$(document).ready(function(){ let defaultFY = $('#finYear').val(); if(defaultFY) loadHOA(defaultFY); });
-
-// Amount Calculations
-function calc(){
-    let amt=parseFloat($('#amount').val())||0;
-    let gstp=parseFloat($('#gstp').val())||0;
-    let itp=parseFloat($('#itp').val())||0;
-    let tds=parseFloat($('#tds').val())||0;
-    let gst=amt*gstp/100;
-    let it=amt*itp/100;
-    $('#total').val((amt+gst-it-tds).toFixed(2));
-}
-$('#amount,#gstp,#itp,#tds').on('input',calc);
-function percentCalc(base,p){ return (base*p/100)||0; }
-
-function calcPO(){
- let a=+$('#po_amount').val()||0;
- let gst=percentCalc(a,+$('#po_gst_p').val());
- let it=percentCalc(a,+$('#po_it_p').val());
- let tdsG=percentCalc(a,+$('#po_tds_gst_p').val());
- let tdsI=percentCalc(a,+$('#po_tds_it_p').val());
-
- 
- $('#po_gst_amt').text('GST: '+gst.toFixed(2));
- $('#po_it_amt').text('IT: '+it.toFixed(2));
- $('#po_tds_gst_amt').text('TDS GST: '+tdsG.toFixed(2));
- $('#po_tds_it_amt').text('TDS IT: '+tdsI.toFixed(2));
-
- $('#po_net_total').val((a+gst+it-tdsG-tdsI).toFixed(2));
-}
-$('#po_tds_it_p').on('blur', function () {
-    let val = +this.value;
-
-    if (val !== 2 && val !== 10 && val !== 0 && this.value !== '') {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Invalid TDS IT %',
-            text: 'Only 2% or 10% is allowed'
-        });
-        this.value = '';
-        this.focus();
-    }
+$('#finYear').change(function(){
+    let fy=$(this).val();
+    fy ? loadHOA(fy) : $('#hoa').html('<option>-- Select HOA --</option>');
 });
-function calcInvoice(){
- let a=+$('#amount').val()||0;
- let gst=percentCalc(a,+$('#gstp').val());
- let it=percentCalc(a,+$('#itp').val());
- let tdsG=percentCalc(a,+$('#tds_gst_p').val());
- let tdsI=percentCalc(a,+$('#tds_it_p').val());
-
-
-
- let total=a+gst+it;
- let tdsTotal=tdsG+tdsI;
-
- $('#gst_amt').text('GST: '+gst.toFixed(2));
- $('#it_amt').text('IT: '+it.toFixed(2));
- $('#tds_gst_amt').text('TDS GST: '+tdsG.toFixed(2));
- $('#tds_it_amt').text('TDS IT: '+tdsI.toFixed(2));
-
- $('#invoice_total').val(total.toFixed(2));
- $('#tds_total').val(tdsTotal.toFixed(2));
- $('#net_payable').val((total-tdsTotal).toFixed(2));
-}
-$('#tds_it_p').on('blur', function () {
-    let val = +this.value;
-
-    if (val !== 2 && val !== 10 && val !== 0 && this.value !== '') {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Invalid TDS IT %',
-            text: 'Only 2% or 10% is allowed'
-        });
-        this.value = '';
-        this.focus();
-    }
-});
-$('input').on('input',function(){ calcPO(); calcInvoice(); });
-// Form Submit
-$('#invoiceForm').submit(function(e){
- e.preventDefault();
- $.post('invoice_submit.php',$(this).serialize(),function(r){
-  if(r.status==='success'){
-   Swal.fire({
-                title: 'Saved',
-                text: 'Invoice created successfully',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                // Redirect to invoice list page after user clicks OK
-                window.location.href = 'invoice_list.php';
-            });
-  }else Swal.fire('Error',r.message,'error');
- },'json');
+$(document).ready(function(){
+    let fy=$('#finYear').val();
+    if(fy) loadHOA(fy);
 });
 
-
+/* ================= LOAD PO ================= */
 function loadPO(){
     $.getJSON('get_po_list.php', function(res){
-        let opt = '<option value="">-- Select PO --</option>';
-        $.each(res, function(i,row){
-            opt += `<option value="${row.Id}">${row.POOrderNo}</option>`;
+        let opt='<option value="">-- Select PO --</option>';
+        $.each(res,function(i,row){
+            opt+=`<option value="${row.Id}">${row.POOrderNo}</option>`;
         });
         $('#po_id').html(opt);
     });
 }
+$(document).ready(loadPO);
 
-/* ================= LOAD SANCTION BY PO ================= */
+/* ================= PO CHANGE ================= */
 $('#po_id').change(function(){
-    let poId = $(this).val();
-    $('#sanction_id').html('<option value="">Loading...</option>');
+    let poId=$(this).val();
 
-    if(!poId){
-        $('#sanction_id').html('<option value="">-- Select Sanction --</option>');
-        return;
-    }
+    $('#sanction_id').html('<option>Loading...</option>');
+    $('#po_total_sanction,#po_billed_amount,#po_available_balance').val('');
+    $('#sanction_balance').val('');
 
-    $.getJSON('get_sanction_by_po.php',{POId:poId}, function(res){
-        let opt = '<option value="">-- Select Sanction --</option>';
+    if(!poId) return;
+
+    /* 🔹 Load PO summary */
+    $.getJSON('get_po_sanction_summary.php',{POId:poId},function(res){
+        $('#po_total_sanction').val(res.total_sanction.toFixed(2));
+        $('#po_billed_amount').val(res.billed_amount.toFixed(2));
+        $('#po_available_balance').val(res.available_balance.toFixed(2));
+    });
+
+    /* 🔹 Load sanctions */
+    $.getJSON('get_sanction_by_po.php',{POId:poId},function(res){
+        let opt='<option value="">-- Select Sanction --</option>';
         $.each(res,function(i,row){
-            opt += `<option value="${row.Id}">
-                        ${row.SanctionOrderNo} | ₹${row.SanctionNetAmount}
-                    </option>`;
+            opt+=`
+            <option value="${row.Id}" data-balance="${row.balance}">
+                ${row.SanctionOrderNo} | Balance ₹${row.balance}
+            </option>`;
         });
         $('#sanction_id').html(opt);
     });
 });
 
-$(document).ready(loadPO);
+/* ================= SANCTION CHANGE ================= */
+$('#sanction_id').change(function(){
+    let bal=$('option:selected',this).data('balance')||0;
+    $('#sanction_balance').val(parseFloat(bal).toFixed(2));
+});
+
+/* ================= CALCULATIONS ================= */
+function percentCalc(base,p){return (base*p/100)||0;}
+
+function calcInvoice(){
+    let a=+$('#amount').val()||0;
+    let gst=percentCalc(a,+$('#gstp').val());
+    let it=percentCalc(a,+$('#itp').val());
+    let tdsG=percentCalc(a,+$('#tds_gst_p').val());
+    let tdsI=percentCalc(a,+$('#tds_it_p').val());
+
+    let total=a+gst+it;
+    let tdsTotal=tdsG+tdsI;
+
+    $('#gst_amt').text('GST: '+gst.toFixed(2));
+    $('#it_amt').text('IT: '+it.toFixed(2));
+    $('#tds_gst_amt').text('TDS GST: '+tdsG.toFixed(2));
+    $('#tds_it_amt').text('TDS IT: '+tdsI.toFixed(2));
+
+    $('#invoice_total').val(total.toFixed(2));
+    $('#tds_total').val(tdsTotal.toFixed(2));
+    $('#net_payable').val((total-tdsTotal).toFixed(2));
+}
+$('input').on('input',calcInvoice);
+
+/* ================= VALIDATE TDS IT ================= */
+$('#tds_it_p').blur(function(){
+    let v=+this.value;
+    if(v!==0 && v!==2 && v!==10){
+        Swal.fire('Invalid','Only 2% or 10% allowed','warning');
+        this.value='';
+        this.focus();
+    }
+});
+
+/* ================= FORM SUBMIT ================= */
+$('#invoiceForm').submit(function(e){
+    e.preventDefault();
+
+    let invoiceAmt=+$('#amount').val()||0;
+    let bal=+$('#sanction_balance').val()||0;
+
+    if(invoiceAmt>bal){
+        Swal.fire('Invalid Amount','Invoice exceeds available sanction','error');
+        return;
+    }
+
+    $.post('invoice_submit.php',$(this).serialize(),function(r){
+        if(r.status==='success'){
+            Swal.fire('Saved','Invoice created','success')
+            .then(()=>location.href='invoice_list.php');
+        }else{
+            Swal.fire('Error',r.message,'error');
+        }
+    },'json');
+});
 </script>
+
 </body>
 </html>

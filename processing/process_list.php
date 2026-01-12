@@ -144,7 +144,6 @@ $(document).ready(function() {
 
     // SweetAlert confirmation before processing
     
-
     $('.process-btn').click(function(){
     var billId = $(this).data('id');
 
