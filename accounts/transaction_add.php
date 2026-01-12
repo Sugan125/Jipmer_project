@@ -18,7 +18,7 @@ $rows = $conn->query("
         bi.BillNumber,
         bi.BillReceivedDate,
         bi.ReceivedFromSection,
-        p.TotalAmount
+        bi.TotalAmount
     FROM bill_entry b
     INNER JOIN bill_initial_entry bi
         ON bi.Id = b.BillInitialId

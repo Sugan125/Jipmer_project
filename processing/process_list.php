@@ -17,6 +17,7 @@ if ($stmt->fetchColumn() == 0) {
 // Fetch bills with status Pending or Returned
 $userId = $_SESSION['user_id'];
 
+
 if($_SESSION['role'] == '5'){
    
     $stmt = $conn->prepare("
@@ -24,7 +25,7 @@ if($_SESSION['role'] == '5'){
     FROM bill_entry b
     left join bill_initial_entry bn on bn.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
-    WHERE b.Status IN ('Pending','Returned') 
+    WHERE b.Status IN ('Pending','Return') 
     ORDER BY b.CreatedDate DESC
 ");
 $stmt->execute();
@@ -37,7 +38,7 @@ $stmt = $conn->prepare("
     FROM bill_entry b
     left join bill_initial_entry bn on bn.Id = b.BillInitialId
     LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
-    WHERE b.Status IN ('Pending','Returned') 
+    WHERE b.Status IN ('Pending','Return') 
       AND b.AllotedDealingAsst = :user_id
     ORDER BY b.CreatedDate DESC
 ");
@@ -97,7 +98,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
         <td>
             <?php if($r['Status'] == 'Pending'): ?>
                 <span class="badge bg-warning text-dark"><?= $r['Status'] ?></span>
-            <?php elseif($r['Status'] == 'Returned'): ?>
+            <?php elseif($r['Status'] == 'Return'): ?>
                 <span class="badge bg-danger text-dark"><?= $r['Status'] ?></span>
             <?php else: ?>
                 <span class="badge bg-info text-dark"><?= $r['Status'] ?></span>
@@ -108,7 +109,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
             <button 
                 class="btn btn-sm btn-primary process-btn"
                 data-id="<?= $r['BillInitialId'] ?>"
-                <?= ($r['Status'] == 'Returned') ? 'disabled' : '' ?>
+                <?= ($r['Status'] == 'Return') ? 'disabled' : '' ?>
             >
                 <i class="fas fa-play-circle"></i> Process
             </button>

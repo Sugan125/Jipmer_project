@@ -2,7 +2,7 @@
 include '../config/db.php';
 
 $stmt = $conn->query("
-    SELECT Id, POOrderNo
+    SELECT Id, POOrderNo, PoNetAmount as balance
     FROM po_master
     ORDER BY Id DESC
 ");

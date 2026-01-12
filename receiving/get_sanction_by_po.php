@@ -11,14 +11,14 @@ SELECT
     s.Id,
     s.SanctionOrderNo,
     s.SanctionNetAmount,
-    s.SanctionNetAmount - ISNULL(SUM(i.NetPayable),0) AS balance
+    s.SanctionNetAmount AS balance
 FROM sanction_order_master s
-LEFT JOIN invoice_master i
-    ON i.SanctionId = s.Id
 WHERE s.POId = ?
-GROUP BY s.Id, s.SanctionOrderNo, s.SanctionNetAmount
-HAVING (s.SanctionNetAmount - ISNULL(SUM(i.NetPayable),0)) > 0
-";
+AND NOT EXISTS (
+    SELECT 1
+    FROM invoice_master i
+    WHERE i.SanctionId = s.Id
+)";
 
 $stmt = $conn->prepare($sql);
 $stmt->execute([$poId]);

@@ -26,14 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insert into bill_process
             $stmt = $conn->prepare("
                 INSERT INTO bill_process
-                (BillId, Status, ReasonForReturn, Remarks, ProcessedBy, ProcessedIP, ProcessedDate)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (BillId, Status, ReasonForReturn,ReturnedDate ,Remarks, ProcessedBy, ProcessedIP, ProcessedDate)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
                 $billId,
                 $status,
                 $status === 'Return' ? $reason : null,
+                date('Y-m-d'),
                 $remarks,
                 $_SESSION['user_id'],
                 $_SERVER['REMOTE_ADDR'],

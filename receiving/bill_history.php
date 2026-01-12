@@ -156,7 +156,7 @@ foreach ($processHistory as $p) {
                         <tr>
                             <td><?= $i + 1 ?></td>
                             <td>
-                                <?php if ($p['Status'] === 'Returned'): ?>
+                                <?php if ($p['Status'] === 'Return'): ?>
                                     <span class="badge bg-danger">Returned</span>
                                 <?php else: ?>
                                     <span class="badge bg-success">Passed</span>

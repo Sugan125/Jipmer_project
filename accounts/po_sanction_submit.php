@@ -20,6 +20,13 @@ try{
     $poItAmt  = $poAmount * $poItP / 100;
     $poNetAmt = $poAmount + $poGstAmt + $poItAmt;
 
+    $chkPo = $conn->prepare("SELECT COUNT(*) FROM po_master WHERE POOrderNo = ?");
+    $chkPo->execute([$_POST['PONumber']]);
+
+    if ($chkPo->fetchColumn() > 0) {
+        throw new Exception('PO Number already exists');
+    }
+
     /* ================= SAVE PO MASTER ================= */
     $poStmt = $conn->prepare("
         INSERT INTO po_master
@@ -64,6 +71,12 @@ try{
         )
         VALUES (?,?,?,?,?,?,?,?,?,?)
     ");
+
+
+    $sanctionNos = array_filter($_POST['SanctionNo']);
+    if (count($sanctionNos) !== count(array_unique($sanctionNos))) {
+        throw new Exception('Duplicate Sanction Numbers in the form');
+    }
 
     for($i = 0; $i < count($_POST['SanctionNo']); $i++){
 

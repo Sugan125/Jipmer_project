@@ -111,8 +111,6 @@ function nf($v){
     <div class="col-md-4"><strong>Received From:</strong> <?= $inv['ReceivedFromSection'] ?></div>
     <div class="col-md-4"><strong>Section DA:</strong> <?= $inv['SectionDAName'] ?></div>
 
-    <div class="col-md-4"><strong>PFMS No:</strong> <?= $inv['PFMSUniqueNo'] ?></div>
-
     <div class="col-md-4"><strong>Credit To:</strong> <?= $inv['CreditName'] ?></div>
     <div class="col-md-4"><strong>Debit From:</strong> <?= $inv['DebitName'] ?></div>
 </div>

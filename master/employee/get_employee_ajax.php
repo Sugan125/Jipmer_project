@@ -3,11 +3,6 @@ session_start();
 include '../../config/db.php';
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 4) {
-    echo json_encode(['status'=>'error','message'=>'Unauthorized']);
-    exit;
-}
-
 $id = intval($_GET['id'] ?? 0);
 if(!$id){ echo json_encode(['status'=>'error','message'=>'Invalid ID']); exit; }
 

@@ -3,11 +3,7 @@ session_start();
 include '../../config/db.php';
 header('Content-Type: application/json');
 
-// Only admin (role = 4)
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 4) {
-    echo json_encode(['status'=>'error','message'=>'Unauthorized']);
-    exit;
-}
+
 
 // Primary Key
 $id = intval($_POST['Id'] ?? 0);

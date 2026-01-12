@@ -22,16 +22,16 @@ $allotdate = $_POST['allotdate'] ?? null;
 $remarks = $_POST['remarks'] ?? '';
 $updatedby = $_SESSION['user_id'];
 
-if ($id === 0 || trim($remarks) === '' || $CreditToId === 0 || $DebitFromId === 0) {
+if ($id === 0 || trim($remarks) === '') {
     echo json_encode(['status'=>'error','message'=>'Required fields missing']);
     exit;
 }
 
 try {
-    $stmt = $conn->prepare("UPDATE bill_entry SET CreditToId=?, DebitFromId=?, TokenNo=?, 
+    $stmt = $conn->prepare("UPDATE bill_entry SET  TokenNo=?, 
                             AllotedDealingAsst=?, AllotedDate=?, Remarks=?, Status='Pending', UpdatedDate=GETDATE(), UpdatedBy = ?
-                            WHERE Id=? AND Status='Returned'");
-    $stmt->execute([$CreditToId,$DebitFromId, $tokno, $alloted, $allotdate, $remarks,$updatedby, $id]);
+                            WHERE Id=? AND Status='Return'");
+    $stmt->execute([$tokno, $alloted, $allotdate, $remarks,$updatedby, $id, $id]);
 
     echo json_encode(['status'=>'success','message'=>'Bill resubmitted successfully']);
 } catch(Exception $e) {

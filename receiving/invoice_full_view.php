@@ -72,7 +72,6 @@ if(!$inv){
         <div class="col-md-4"><strong>PO Order No:</strong> <?= $inv['POOrderNo'] ?></div>
         <div class="col-md-4"><strong>PO Order Date:</strong> <?= $inv['POOrderDate'] ? date('d-m-Y', strtotime($inv['POOrderDate'])) : '-' ?></div>
         <div class="col-md-4"><strong>Bill Type:</strong> <?= $inv['BillType'] ?></div>
-        <div class="col-md-4"><strong>PFMS Unique No:</strong> <?= $inv['PFMSUniqueNo'] ?></div>
     </div>
 
     <!-- Amounts -->

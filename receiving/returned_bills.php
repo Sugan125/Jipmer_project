@@ -47,8 +47,6 @@ $rows = $conn->query("
                      <th>Bill No</th>
                     <th>Token No</th>
                     <th>Received</th>
-                    <th>From Section</th>
-                    <th>Section Dealing Assistant</th>
                     <th>Alloted To</th>
                     <th>Alloted Date</th>
                     <th>Reason for Returning Bill</th>
@@ -64,8 +62,6 @@ $rows = $conn->query("
         <td><?= htmlspecialchars($r['BillNumber']) ?></td>
         <td><?= htmlspecialchars($r['TokenNo']) ?></td>
         <td><?= $r['BillReceivedDate'] ?></td>
-        <td><?= htmlspecialchars($r['ReceivedFromSection']) ?></td>
-        <td><?= htmlspecialchars($r['SectionDAName']) ?></td>
         <td><?= htmlspecialchars($r['AllotedName']) ?></td>
         <td><?= htmlspecialchars($r['AllotedDate']) ?></td>
         <td><?= htmlspecialchars($r['Remarks']) ?></td>

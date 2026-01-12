@@ -116,6 +116,17 @@ $sanctions = $sanStmt->fetchAll();
 </tr>
 <?php endforeach; ?>
 </tbody>
+<tfoot class="table-light fw-bold">
+<tr>
+    <td colspan="4" class="text-end">TOTAL</td>
+    <td id="total_gst">0.00</td>
+    <td></td>
+    <td id="total_it">0.00</td>
+    <td id="total_net">0.00</td>
+    <td></td>
+</tr>
+</tfoot>
+
 </table>
 </div>
 
@@ -148,16 +159,69 @@ function calcPO(){
 }
 
 function calcSanction(){
- $('#sanctionTable tbody tr').each(function(){
-  let a=+$(this).find('.samt').val()||0;
-  let gp=+$('#po_gst_p').val()||0;
-  let ip=+$('#po_it_p').val()||0;
-  let g=percentCalc(a,gp), i=percentCalc(a,ip);
-  $(this).find('.sgsta').text(g.toFixed(2));
-  $(this).find('.sita').text(i.toFixed(2));
-  $(this).find('.snet').text((a+g+i).toFixed(2));
- });
+
+    let totalGST = 0;
+    let totalIT  = 0;
+    let totalNet = 0;
+
+    $('#sanctionTable tbody tr').each(function(){
+
+        let amt = parseFloat($(this).find('.samt').val()) || 0;
+        let gp  = parseFloat($('#po_gst_p').val()) || 0;
+        let ip  = parseFloat($('#po_it_p').val()) || 0;
+
+        let gst = percentCalc(amt, gp);
+        let it  = percentCalc(amt, ip);
+        let net = amt + gst + it;
+
+        $(this).find('.sgsta').text(gst.toFixed(2));
+        $(this).find('.sita').text(it.toFixed(2));
+        $(this).find('.snet').text(net.toFixed(2));
+
+        totalGST += gst;
+        totalIT  += it;
+        totalNet += net;
+    });
+
+    $('#total_gst').text(totalGST.toFixed(2));
+    $('#total_it').text(totalIT.toFixed(2));
+    $('#total_net').text(totalNet.toFixed(2));
 }
+
+
+$('#addRow').on('click', function () {
+
+    let rowCount = $('#sanctionTable tbody tr').length + 1;
+
+    let row = `
+    <tr>
+        <td>
+            <input name="SanctionId[]" type="hidden" value="">
+            <input name="SanctionNo[]" class="form-control" placeholder="Sanction No">
+        </td>
+        <td>
+            <input type="date" name="SanctionDate[]" class="form-control">
+        </td>
+        <td>
+            <input name="SanctionAmount[]" class="form-control samt" value="">
+        </td>
+        <td>
+            <input readonly class="form-control sgstp" value="${$('#po_gst_p').val()}">
+        </td>
+        <td class="sgsta fw-bold">0.00</td>
+        <td>
+            <input readonly class="form-control sitp" value="${$('#po_it_p').val()}">
+        </td>
+        <td class="sita fw-bold">0.00</td>
+        <td class="snet fw-bold">0.00</td>
+        <td>
+            <button type="button" class="btn btn-danger btn-sm remove">X</button>
+        </td>
+    </tr>
+    `;
+
+    $('#sanctionTable tbody').append(row);
+});
 
 $('#po_amount,#po_gst_p,#po_it_p').on('input',calcPO);
 $(document).on('input','.samt',calcSanction);

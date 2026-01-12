@@ -22,7 +22,7 @@ $stmt = $conn->prepare("SELECT be.*, bi.BillNumber, bi.BillReceivedDate, bi.Rece
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$bill || $bill['Status'] != 'Returned') {
+if (!$bill || $bill['Status'] != 'Return') {
     die("Bill not found or not returned");
 }
 
@@ -67,31 +67,12 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
                     <label class="form-label">Bill Received Date</label>
                     <input type="date" name="billdate" class="form-control readonly-input" value="<?= $bill['BillReceivedDate'] ?>" readonly>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Received From Section</label>
-                    <input type="text" name="fromsection" class="form-control readonly-input" value="<?= htmlspecialchars($bill['ReceivedFromSection']) ?>" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Section DA Name</label>
-                    <input type="text" name="sdaname" class="form-control readonly-input" value="<?= htmlspecialchars($bill['SectionDAName']) ?>" readonly>
-                </div>
+               
                 <div class="col-md-6">
                     <label class="form-label">Token No</label>
                     <input type="text" name="tokno" class="form-control" value="<?= $bill['TokenNo'] ?>">
                 </div>
-                 <div class="col-md-6">
-    <label class="form-label">Bill Type</label>
-    <select name="BillTypeId" class="form-select readonly-input" disabled>
-        <option value="">Select</option>
-        <?php foreach ($bill_type as $b): ?>
-            <option value="<?= $b['Id'] ?>"
-                <?= ($b['Id'] == $bill['BillTypeId']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($b['BillType']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
-
+                 
                 <div class="col-md-6">
                     <label class="form-label">Alloted Dealing Assistant</label>
                     <select name="alloted" class="form-select">
@@ -108,33 +89,6 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
                     <input type="date" name="allotdate" class="form-control" value="<?= $bill['AllotedDate'] ?>">
                 </div>
 
-                 <div class="col-md-6">
-    <label>Account Credit To</label>
-    <select name="CreditToId" class="form-select" required>
-        <option value="">Select</option>
-        <?php foreach ($credit as $c): ?>
-            <option value="<?= $c['Id'] ?>"
-                <?= ($c['Id'] == $bill['CreditToId']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($c['CreditName']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
-
-
-
-            <div class="col-md-6">
-    <label>Account Debit From</label>
-    <select name="DebitFromId" class="form-select" required>
-        <option value="">Select</option>
-        <?php foreach ($debit as $d): ?>
-            <option value="<?= $d['Id'] ?>"
-                <?= ($d['Id'] == $bill['DebitFromId']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($d['DebitName']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
                 <div class="col-12">
                     <label class="form-label">Remarks</label>
                     <textarea name="remarks" class="form-control" rows="3"><?= htmlspecialchars($bill['Remarks']) ?></textarea>

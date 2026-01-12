@@ -14,37 +14,41 @@ $totalAmount = $_POST['Amount'] + $gstAmt + $itAmt;
 
 $tdsG = $_POST['Amount'] * $_POST['TDSGSTPercent'] / 100;
 $tdsI = $_POST['Amount'] * $_POST['TDSITPercent'] / 100;
-
+//$sanctionIds = $_POST['SanctionId']; 
 $check = $conn->prepare("
     SELECT COUNT(*) 
     FROM invoice_master 
     WHERE SanctionId = ?
 ");
-$check->execute([$_POST['SanctionId']]);
 
-if($check->fetchColumn() > 0){
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'This sanction order is already billed'
-    ]);
-    exit;
-}
+// foreach ($sanctionIds as $sid) {
+//     $check->execute([$sid]);
+//     if ($check->fetchColumn() > 0) {
+//         echo json_encode([
+//             'status' => 'error',
+//             'message' => 'One of the selected sanctions is already billed'
+//         ]);
+//         exit;
+//     }
+// }
 
 $stmtsanction = $conn->prepare("
     SELECT SanctionNetAmount 
     FROM sanction_order_master 
     WHERE Id = ?
 ");
-$stmtsanction->execute([$_POST['SanctionId']]);
-$sanctionAmt = (float)$stmtsanction->fetchColumn();
+// foreach ($sanctionIds as $sid) {
+//     $stmtsanction->execute([$sid]);
+//     $totalSanctionBalance += (float)$stmtsanction->fetchColumn();
+// }
 
-if($_POST['Amount'] > $sanctionAmt){
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invoice amount exceeds sanction balance'
-    ]);
-    exit;
-}
+// if ($_POST['Amount'] > $totalSanctionBalance) {
+//     echo json_encode([
+//         'status' => 'error',
+//         'message' => 'Invoice amount exceeds combined sanction balance'
+//     ]);
+//     exit;
+// }
 
 $netPayable = $totalAmount - ($tdsG + $tdsI);
 
@@ -58,9 +62,8 @@ INSERT INTO invoice_master
 
  POId, SanctionId,
 
- BankName, IFSC, AccountNumber,
+ BankName, IFSC, AccountNumber, PanNumber,
  ReceivedFromSection, SectionDAName,
- PFMSUniqueNo,
 
  Amount, GSTPercent, GSTAmount,
  ITPercent, ITAmount,
@@ -77,9 +80,8 @@ VALUES (
  ?,?,
  ?,?,?,
  ?,?,
- ?,?,?,
+ ?,?,?,?,
  ?,?,
- ?,
  ?,?,?,
  ?,?,
  ?,
@@ -104,14 +106,15 @@ $stmt->execute([
  $_POST['VendorName'],
 
  $_POST['POId'],
- $_POST['SanctionId'],
+ //$sid,
+  $_POST['SanctionId'],
 
  $_POST['BankName'],
  $_POST['IFSC'],
  $_POST['AccountNumber'],
+ $_POST['PanNumber'],
  $_POST['ReceivedFromSection'],
  $_POST['SectionDAName'],
- $_POST['PFMSUniqueNo'],
 
  $_POST['Amount'],
  $_POST['GSTPercent'],

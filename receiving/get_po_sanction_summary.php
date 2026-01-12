@@ -14,7 +14,7 @@ $poId = (int)$_GET['POId'];
 $sql = "
 SELECT
     ISNULL(SUM(s.SanctionNetAmount),0) AS total_sanction,
-    ISNULL(SUM(i.NetPayable),0) AS billed_amount,
+    ISNULL(SUM(i.Amount),0) AS billed_amount,
     ISNULL(SUM(s.SanctionNetAmount),0) - ISNULL(SUM(i.NetPayable),0) AS available_balance
 FROM sanction_order_master s
 LEFT JOIN invoice_master i

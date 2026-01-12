@@ -29,7 +29,7 @@ $rows = $conn->query("
         bi.BillNumber,
         bi.BillReceivedDate,
         bi.ReceivedFromSection,
-        p.TotalAmount,
+        bi.TotalAmount,
         p.Status AS ProcessStatus
      FROM bill_entry b
  INNER JOIN bill_initial_entry bi
@@ -76,7 +76,7 @@ $rows = $conn->query("
 
 
 <div class="page-content">
-    <h3 class="mb-4 text-center">Bills Awaiting Voucher (PFMS)</h3>
+    <h3 class="mb-4 text-center">Bills Awaiting Voucher</h3>
 
     <div class="table-responsive shadow rounded bg-white p-3">
         <table id="billsTable" class="table table-striped table-bordered table-hover">

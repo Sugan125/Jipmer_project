@@ -107,6 +107,16 @@ small{color:#198754;font-weight:600;}
 </tr>
 </thead>
 <tbody></tbody>
+<tfoot class="table-light fw-bold">
+<tr>
+    <td colspan="4" class="text-end">TOTAL</td>
+    <td id="total_gst">0.00</td>
+    <td></td>
+    <td id="total_it">0.00</td>
+    <td id="total_net">0.00</td>
+    <td></td>
+</tr>
+</tfoot>
 </table>
 </div>
 </div>
@@ -162,34 +172,46 @@ function addRow(){
 }
 
 function calcSanction(){
- let total=0;
+    let totalAmount = 0;
+    let totalGST = 0;
+    let totalIT = 0;
+    let totalNet = 0;
 
- $('#sanctionTable tbody tr').each(function(){
-  let amt = +$(this).find('.samt').val()||0;
-  let gp  = +$('#po_gst_p').val()||0;
-  let ip  = +$('#po_it_p').val()||0;
+    $('#sanctionTable tbody tr').each(function(){
+        let amt = +$(this).find('.samt').val() || 0;
+        let gp  = +$('#po_gst_p').val() || 0;
+        let ip  = +$('#po_it_p').val() || 0;
 
-  let gst = percentCalc(amt,gp);
-  let it  = percentCalc(amt,ip);
+        let gst = percentCalc(amt, gp);
+        let it  = percentCalc(amt, ip);
+        let net = amt + gst + it;
 
-  $(this).find('.sgsta').text(gst.toFixed(2));
-  $(this).find('.sita').text(it.toFixed(2));
-  $(this).find('.snet').text((amt+gst+it).toFixed(2));
+        $(this).find('.sgsta').text(gst.toFixed(2));
+        $(this).find('.sita').text(it.toFixed(2));
+        $(this).find('.snet').text(net.toFixed(2));
 
-  total += amt;
- });
+        totalAmount += amt;
+        totalGST += gst;
+        totalIT += it;
+        totalNet += net;
+    });
 
- let po = +$('#po_amount').val()||0;
- let bal = po - total;
+    // ✅ Update footer totals
+    $('#total_gst').text(totalGST.toFixed(2));
+    $('#total_it').text(totalIT.toFixed(2));
+    $('#total_net').text(totalNet.toFixed(2));
 
- $('#remaining_balance').val(bal.toFixed(2));
+    // Remaining balance logic
+    let po = +$('#po_amount').val() || 0;
+    let bal = po - totalAmount;
+    $('#remaining_balance').val(bal.toFixed(2));
 
- if(total > po){
-     Swal.fire('Error','Total Sanction Amount exceeds PO Amount','error');
-     $('button[type="submit"]').prop('disabled',true);
- } else {
-     $('button[type="submit"]').prop('disabled',false);
- }
+    if(totalAmount > po){
+        Swal.fire('Error','Total Sanction Amount exceeds PO Amount','error');
+        $('button[type="submit"]').prop('disabled', true);
+    } else {
+        $('button[type="submit"]').prop('disabled', false);
+    }
 }
 
 /* ================= EVENTS ================= */
@@ -199,6 +221,32 @@ $(document).on('input','.samt',calcSanction);
 $(document).on('click','.remove',function(){
     $(this).closest('tr').remove();
     calcSanction();
+});
+
+// Check PO Number duplicate
+$('input[name="PONumber"]').on('blur', function(){
+    let poNum = $(this).val().trim();
+    if(poNum==='') return;
+
+    $.get('check_duplicate.php', { type:'po', value: poNum }, function(res){
+        if(res.duplicate){
+            Swal.fire('Duplicate','PO Number already exists!','warning');
+            $('input[name="PONumber"]').val('').focus();
+        }
+    },'json');
+});
+
+// Check Sanction Number duplicate (for all dynamic rows)
+$(document).on('blur','input[name="SanctionNo[]"]', function(){
+    let sanNo = $(this).val().trim();
+    if(sanNo==='') return;
+
+    $.get('check_duplicate.php', { type:'sanction', value: sanNo }, function(res){
+        if(res.duplicate){
+            Swal.fire('Duplicate','Sanction Number already exists!','warning');
+            $(this).val('').focus();
+        }
+    }.bind(this),'json'); // bind `this` to keep reference
 });
 
 /* ================= SUBMIT ================= */

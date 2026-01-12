@@ -16,7 +16,7 @@ if (!$username || !$password) {
 }
 
 $stmt = $conn->prepare("
-    SELECT Id, Username, Password, RoleId 
+    SELECT * 
     FROM employee_master 
     WHERE Username = ? AND Status = 1
 ");
@@ -28,6 +28,7 @@ if ($user && $password === $user['Password']) {
 
     $_SESSION['user_id'] = $user['Id'];
     $_SESSION['username'] = $user['Username'];
+    $_SESSION['empname'] = $user['EmployeeName'];
     $_SESSION['role'] = $user['RoleId'];
 
     // ✅ ALWAYS redirect to one dashboard
