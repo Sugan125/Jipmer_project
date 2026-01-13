@@ -4,33 +4,83 @@ include '../includes/auth.php';
 
 // Fetch bills with aggregated invoice totals
 $rows = $conn->query("
-    SELECT 
-        bi.Id,
-        COALESCE(bi.BillNumber,'— Draft —') AS BillNumber,
-        COALESCE(btm.BillType,'Draft') AS BillType,
-        bi.BillReceivedDate,
-        im.ReceivedFromSection,
-        e.EmployeeName AS AllotedName,
-        b.Status,
+  WITH InvoiceAgg AS (
+    SELECT
+        bim.BillInitialId,
+
         SUM(im.Amount) AS TotalAmount,
         SUM(im.GSTAmount) AS TotalGST,
         SUM(im.ITAmount) AS TotalIT,
         SUM(im.TDSGSTAmount + im.TDSITAmount) AS TotalTDS,
         SUM(im.TotalAmount) AS GrossTotal,
         SUM(im.NetPayable) AS NetTotal,
-        SUM(im.POAmount) AS POTotal,
-        SUM(im.POGSTAmount) AS POGSTTotal,
-        SUM(im.POITAmount) AS POITTotal,
-        SUM(im.POAmount + im.POGSTAmount + im.POITAmount) AS POTotalGross,
-        SUM(im.POAmount + im.POGSTAmount + im.POITAmount - (im.TDSPoGSTAmount + im.TDSPoITAmount)) AS POTotalNet
-    FROM bill_initial_entry bi
-    LEFT JOIN bill_entry b ON bi.Id = b.BillInitialId
-    LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
-    LEFT JOIN bill_type_master btm ON btm.Id = bi.BillTypeId
-    LEFT JOIN bill_invoice_map bim ON bim.BillInitialId = bi.Id
-    LEFT JOIN invoice_master im ON im.Id = bim.InvoiceId
-    GROUP BY 
-    bi.Id, b.Status, bi.BillNumber,bi.CreatedDate, bi.BillReceivedDate, im.ReceivedFromSection, e.EmployeeName, btm.BillType
+
+        MAX(im.ReceivedFromSection) AS ReceivedFromSection,
+        MAX(im.BillTypeId) AS BillTypeId   -- ✅ BillType from invoice
+
+    FROM bill_invoice_map bim
+    JOIN invoice_master im ON im.Id = bim.InvoiceId
+    GROUP BY bim.BillInitialId
+),
+POAgg AS (
+    SELECT
+        bim.BillInitialId,
+
+        SUM(DISTINCT pm.POAmount) AS POTotal,
+        SUM(DISTINCT pm.POAmount * pm.POGSTPercent / 100.0) AS POGSTTotal,
+        SUM(DISTINCT pm.POAmount * pm.POITPercent / 100.0)  AS POITTotal,
+
+        SUM(DISTINCT
+            pm.POAmount
+            + (pm.POAmount * pm.POGSTPercent / 100.0)
+            + (pm.POAmount * pm.POITPercent / 100.0)
+        ) AS POTotalGross
+
+    FROM bill_invoice_map bim
+    JOIN invoice_master im ON im.Id = bim.InvoiceId
+    JOIN po_master pm ON pm.Id = im.POId
+    GROUP BY bim.BillInitialId
+)
+
+SELECT
+    bi.Id,
+    COALESCE(bi.BillNumber,'— Draft —') AS BillNumber,
+    COALESCE(btm.BillType,'Draft') AS BillType,
+    bi.BillReceivedDate,
+
+    ia.ReceivedFromSection,
+    e.EmployeeName AS AllotedName,
+    b.Status,
+
+    ia.TotalAmount,
+    ia.TotalGST,
+    ia.TotalIT,
+    ia.TotalTDS,
+    ia.GrossTotal,
+    ia.NetTotal,
+
+    pa.POTotal,
+    pa.POGSTTotal,
+    pa.POITTotal,
+    pa.POTotalGross,
+    pa.POTotalGross AS POTotalNet   -- no TDS yet
+
+FROM bill_initial_entry bi
+LEFT JOIN bill_entry b 
+    ON b.BillInitialId = bi.Id
+
+LEFT JOIN employee_master e 
+    ON e.Id = b.AllotedDealingAsst
+
+LEFT JOIN InvoiceAgg ia 
+    ON ia.BillInitialId = bi.Id
+
+LEFT JOIN bill_type_master btm 
+    ON btm.Id = ia.BillTypeId   -- ✅ correct join
+
+LEFT JOIN POAgg pa 
+    ON pa.BillInitialId = bi.Id
+
 ORDER BY bi.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>

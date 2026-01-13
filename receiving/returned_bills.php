@@ -16,11 +16,32 @@ if ($stmt->fetchColumn() == 0) {
 
 // Fetch returned bills
 $rows = $conn->query("
-    SELECT b.*,cs.ReplyText, e.EmployeeName AS AllotedName ,bn.BillNumber, Bn.BillReceivedDate, bn.SectionDAName, bn.ReceivedFromSection
+    WITH InvoiceAgg AS (
+        SELECT
+            bim.BillInitialId,
+            MAX(im.SectionDAName) AS SectionDAName,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection
+        FROM bill_invoice_map bim
+        JOIN invoice_master im ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    )
+    SELECT
+        b.*,
+        cs.ReplyText,
+        e.EmployeeName AS AllotedName,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        ia.SectionDAName,
+        ia.ReceivedFromSection
     FROM bill_entry b
-     left join bill_initial_entry bn on bn.Id = b.BillInitialId
-    LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
-    left join concerned_section_reply cs on cs.BillId = b.Id
+    JOIN bill_initial_entry bi 
+        ON bi.Id = b.BillInitialId
+    LEFT JOIN InvoiceAgg ia 
+        ON ia.BillInitialId = bi.Id
+    LEFT JOIN employee_master e 
+        ON b.AllotedDealingAsst = e.Id
+    LEFT JOIN concerned_section_reply cs 
+        ON cs.BillId = b.Id
     WHERE b.Status = 'Return'
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>

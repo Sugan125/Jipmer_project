@@ -13,20 +13,32 @@ $stmt = $conn->prepare("
     SELECT 
         bi.BillNumber,
         bi.BillReceivedDate,
-        bi.ReceivedFromSection,
+        bi.TotalAmount AS Amount,
+        ia.ReceivedFromSection,
         be.TokenNo,
         be.Remarks,
-        bp.ReasonForReturn,
-        bp.Amount
+        bp.ReasonForReturn
     FROM bill_entry be
     INNER JOIN bill_initial_entry bi 
         ON bi.Id = be.BillInitialId
     LEFT JOIN bill_process bp 
-        ON bp.BillId = bi.Id
+        ON bp.BillId = be.Id
+    LEFT JOIN (
+        SELECT 
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection
+        FROM bill_invoice_map bim
+        INNER JOIN invoice_master im
+            ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    ) ia 
+        ON ia.BillInitialId = bi.Id
     WHERE be.Id = ?
 ");
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
 
 
 if (!$bill) {

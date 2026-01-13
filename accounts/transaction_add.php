@@ -17,14 +17,23 @@ $rows = $conn->query("
         b.Id,
         bi.BillNumber,
         bi.BillReceivedDate,
-        bi.ReceivedFromSection,
-        bi.TotalAmount
+        bi.TotalAmount,
+        ia.ReceivedFromSection
     FROM bill_entry b
     INNER JOIN bill_initial_entry bi
         ON bi.Id = b.BillInitialId
     INNER JOIN bill_process p
         ON p.BillId = bi.Id
        AND p.Status = 'Pass'
+    LEFT JOIN (
+        SELECT 
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection
+        FROM bill_invoice_map bim
+        INNER JOIN invoice_master im
+            ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    ) ia ON ia.BillInitialId = bi.Id
     WHERE b.Status = 'Pass'
       AND NOT EXISTS (
             SELECT 1

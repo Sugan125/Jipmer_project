@@ -28,27 +28,35 @@ $rows = $conn->query("
         b.CreatedDate,
         bi.BillNumber,
         bi.BillReceivedDate,
-        bi.ReceivedFromSection,
+        ia.ReceivedFromSection,
         bi.TotalAmount,
         p.Status AS ProcessStatus
-     FROM bill_entry b
- INNER JOIN bill_initial_entry bi
-     ON bi.Id = b.BillInitialId
- INNER JOIN bill_process p
-     ON p.BillId = b.Id
-    AND p.Status = 'Pass'
- INNER JOIN bill_transactions t
-     ON t.BillId = b.Id
- WHERE b.Status = 'Transaction Done'
-   AND NOT EXISTS (
-         SELECT 1
-         FROM final_accounts f
-         WHERE f.BillId = b.Id
-   )
- ORDER BY b.CreatedDate DESC
+    FROM bill_entry b
+    INNER JOIN bill_initial_entry bi
+        ON bi.Id = b.BillInitialId
+    INNER JOIN bill_process p
+        ON p.BillId = b.Id
+       AND p.Status = 'Pass'
+    INNER JOIN bill_transactions t
+        ON t.BillId = b.Id
+    LEFT JOIN (
+        SELECT 
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection
+        FROM bill_invoice_map bim
+        INNER JOIN invoice_master im
+            ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    ) ia ON ia.BillInitialId = bi.Id
+    WHERE b.Status = 'Transaction Done'
+      AND NOT EXISTS (
+            SELECT 1
+            FROM final_accounts f
+            WHERE f.BillId = b.Id
+      )
+    ORDER BY b.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">

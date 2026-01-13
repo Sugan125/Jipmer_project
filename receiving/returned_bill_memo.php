@@ -13,10 +13,28 @@ $stmt->execute([$_SESSION['role'], "%$page%"]);
 
 // Fetch returned bills
 $rows = $conn->query("
-    SELECT b.*, e.EmployeeName AS AllotedName, bi.BillNumber, bi.BillReceivedDate , bi.ReceivedFromSection, bi.SectionDAName
+    SELECT 
+        b.*,
+        e.EmployeeName AS AllotedName,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        ia.ReceivedFromSection,
+        ia.SectionDAName
     FROM bill_entry b
-    left join bill_initial_entry bi on bi.Id = b.BillInitialId
-    LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
+    LEFT JOIN bill_initial_entry bi 
+        ON bi.Id = b.BillInitialId
+    LEFT JOIN employee_master e 
+        ON b.AllotedDealingAsst = e.Id
+    LEFT JOIN (
+        SELECT 
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection,
+            MAX(im.SectionDAName) AS SectionDAName
+        FROM bill_invoice_map bim
+        JOIN invoice_master im 
+            ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    ) ia ON ia.BillInitialId = bi.Id
     WHERE b.Status = 'Return'
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>

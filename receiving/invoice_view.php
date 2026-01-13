@@ -5,7 +5,8 @@ include '../includes/auth.php';
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 $stmt = $conn->prepare("
-    SELECT im.*,
+    SELECT im.*,so.SanctionOrderNo,so.SanctionDate,so.SanctionAmount,so.GSTPercent,so.GSTAmount
+    ,so.ITPercent,so.ITAmount,so.SanctionNetAmount,pm.POOrderNo,pm.POOrderDate,pm.POAmount,pm.POGSTPercent,pm.POITPercent,pm.PONetAmount,
            fy.FinYear,
            d.DeptName,
            b.BillType,
@@ -13,6 +14,8 @@ $stmt = $conn->prepare("
            de.DebitName,
            h.DetailsHeadCode + ' - ' + h.DetailsHeadName + ' / ' + h.SubDetailsHeadName AS HOA_NAME
     FROM invoice_master im
+    left join sanction_order_master so on so.Id = im.SanctionId
+    left join po_master pm on pm.Id = im.POId
     LEFT JOIN fin_year_master fy ON im.FinancialYearId = fy.Id
     LEFT JOIN dept_master d ON im.DeptId = d.Id
     LEFT JOIN bill_type_master b ON im.BillTypeId = b.Id
@@ -32,6 +35,24 @@ if(!$inv){
 function nf($v){
     return number_format((float)($v ?? 0), 2);
 }
+
+$poAmount = (float) ($inv['POAmount'] ?? 0);
+
+$poGSTPercent = (float) ($inv['POGSTPercent'] ?? 0);
+$poITPercent  = (float) ($inv['POITPercent'] ?? 0);
+
+$poGSTAmount = ($poAmount * $poGSTPercent) / 100;
+$poITAmount  = ($poAmount * $poITPercent) / 100;
+
+/* ---- TDS % (use DB value or default 0) ---- */
+$tdsPoGSTPercent = (float) ($inv['TDSPoGSTPercent'] ?? 0);
+$tdsPoITPercent  = (float) ($inv['TDSPoITPercent'] ?? 0);
+
+$tdsPoGSTAmount = ($poGSTAmount * $tdsPoGSTPercent) / 100;
+$tdsPoITAmount  = ($poITAmount * $tdsPoITPercent) / 100;
+
+$poTotal = $poAmount + $poGSTAmount + $poITAmount;
+$poNetPayable = $poTotal - ($tdsPoGSTAmount + $tdsPoITAmount);
 ?>
 
 <ul class="nav nav-tabs mb-3" role="tablist">
@@ -86,18 +107,42 @@ function nf($v){
 <!-- TAB 3 -->
 <div class="tab-pane fade" id="tab-po">
 <table class="table table-bordered table-sm">
-<tr><th>PO Amount</th><td class="text-end"><?= nf($inv['POAmount']) ?></td></tr>
-<tr><th>PO GST (<?= $inv['POGSTPercent'] ?>%)</th><td class="text-end"><?= nf($inv['POGSTAmount']) ?></td></tr>
-<tr><th>PO IT (<?= $inv['POITPercent'] ?>%)</th><td class="text-end"><?= nf($inv['POITAmount']) ?></td></tr>
-<tr class="table-secondary fw-bold"><th>PO Total Amount</th>
-    <td class="text-end"><?= nf($inv['POAmount'] + $inv['POGSTAmount'] + $inv['POITAmount']) ?></td></tr>
-<tr><th>TDS PO GST (<?= $inv['TDSPoGSTPercent'] ?>%)</th><td class="text-end"><?= nf($inv['TDSPoGSTAmount']) ?></td></tr>
-<tr><th>TDS PO IT (<?= $inv['TDSPoITPercent'] ?>%)</th><td class="text-end"><?= nf($inv['TDSPoITAmount']) ?></td></tr>
-<tr class="table-success fw-bold"><th>PO Net Payable</th>
-    <td class="text-end"><?= nf(
-        $inv['POAmount'] + $inv['POGSTAmount'] + $inv['POITAmount'] - 
-        ($inv['TDSPoGSTAmount'] + $inv['TDSPoITAmount'])
-    ) ?></td></tr>
+
+<tr>
+    <th>PO Amount</th>
+    <td class="text-end"><?= nf($poAmount) ?></td>
+</tr>
+
+<tr>
+    <th>PO GST (<?= $poGSTPercent ?>%)</th>
+    <td class="text-end"><?= nf($poGSTAmount) ?></td>
+</tr>
+
+<tr>
+    <th>PO IT (<?= $poITPercent ?>%)</th>
+    <td class="text-end"><?= nf($poITAmount) ?></td>
+</tr>
+
+<tr class="table-secondary fw-bold">
+    <th>PO Total Amount</th>
+    <td class="text-end"><?= nf($poTotal) ?></td>
+</tr>
+
+<tr>
+    <th>TDS PO GST (<?= $tdsPoGSTPercent ?>%)</th>
+    <td class="text-end"><?= nf($tdsPoGSTAmount) ?></td>
+</tr>
+
+<tr>
+    <th>TDS PO IT (<?= $tdsPoITPercent ?>%)</th>
+    <td class="text-end"><?= nf($tdsPoITAmount) ?></td>
+</tr>
+
+<tr class="table-success fw-bold">
+    <th>PO Net Payable</th>
+    <td class="text-end"><?= nf($poNetPayable) ?></td>
+</tr>
+
 </table>
 </div>
 

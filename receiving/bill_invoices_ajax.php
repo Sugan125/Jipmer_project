@@ -7,10 +7,12 @@ if(!$billId) exit('<div class="text-center text-danger">Invalid Bill ID</div>');
 
 // Fetch attached invoices with full details
 $invoices = $conn->prepare("
-    SELECT i.*, d.DeptName, b.BillType, c.CreditName, de.DebitName,
+    SELECT i.*,so.*,pm.*, d.DeptName, b.BillType, c.CreditName, de.DebitName,
            h.DetailsHeadCode + ' - ' + h.DetailsHeadName + ' / ' + h.SubDetailsHeadName AS HOA_NAME
     FROM invoice_master i
     LEFT JOIN dept_master d ON i.DeptId = d.Id
+    left join sanction_order_master so on so.Id = i.SanctionId
+    left join po_master pm on pm.Id = i.POId
     LEFT JOIN bill_type_master b ON i.BillTypeId = b.Id
     LEFT JOIN account_credit_master c ON i.CreditToId = c.Id
     LEFT JOIN account_debit_master de ON i.DebitFromId = de.Id
@@ -31,6 +33,24 @@ if(!$invoices){
 function nf($v){ return number_format($v,2); }
 
 foreach($invoices as $inv):
+
+    $poAmount = (float) ($inv['POAmount'] ?? 0);
+
+$poGSTPercent = (float) ($inv['POGSTPercent'] ?? 0);
+$poITPercent  = (float) ($inv['POITPercent'] ?? 0);
+
+$poGSTAmount = ($poAmount * $poGSTPercent) / 100;
+$poITAmount  = ($poAmount * $poITPercent) / 100;
+
+/* ---- TDS (example: if percentages come from config or constants) ---- */
+$tdsPoGSTPercent = (float) ($inv['TDSPoGSTPercent'] ?? 0);
+$tdsPoITPercent  = (float) ($inv['TDSPoITPercent'] ?? 0);
+
+$tdsPoGSTAmount = ($poGSTAmount * $tdsPoGSTPercent) / 100;
+$tdsPoITAmount  = ($poITAmount * $tdsPoITPercent) / 100;
+
+$poTotal = $poAmount + $poGSTAmount + $poITAmount;
+$poNetPayable = $poTotal - ($tdsPoGSTAmount + $tdsPoITAmount);
 ?>
 <div class="invoice-card shadow-sm mb-4 p-3 rounded">
 
@@ -89,17 +109,33 @@ foreach($invoices as $inv):
         <!-- TAB 3: PO & TDS -->
         <div class="tab-pane fade" id="tab-po-<?= $inv['Id'] ?>">
             <div class="row mb-2">
-                <div class="col-md-3"><strong>PO Amount:</strong> ₹ <?= nf($inv['POAmount']) ?></div>
-                <div class="col-md-3"><strong>PO GST (<?= $inv['POGSTPercent'] ?>%):</strong> ₹ <?= nf($inv['POGSTAmount']) ?></div>
-                <div class="col-md-3"><strong>PO IT (<?= $inv['POITPercent'] ?>%):</strong> ₹ <?= nf($inv['POITAmount']) ?></div>
-                <div class="col-md-3"><strong>PO Total:</strong> ₹ <?= nf($inv['POAmount'] + $inv['POGSTAmount'] + $inv['POITAmount']) ?></div>
+                <div class="col-md-3">
+                    <strong>PO Amount:</strong> ₹ <?= nf($poAmount) ?>
+                </div>
+                <div class="col-md-3">
+                    <strong>PO GST (<?= $poGSTPercent ?>%):</strong> ₹ <?= nf($poGSTAmount) ?>
+                </div>
+                <div class="col-md-3">
+                    <strong>PO IT (<?= $poITPercent ?>%):</strong> ₹ <?= nf($poITAmount) ?>
+                </div>
+                <div class="col-md-3">
+                    <strong>PO Total:</strong> ₹ <?= nf($poTotal) ?>
+                </div>
             </div>
+
             <div class="row mb-2">
-                <div class="col-md-3"><strong>TDS PO GST (<?= $inv['TDSPoGSTPercent'] ?>%):</strong> ₹ <?= nf($inv['TDSPoGSTAmount']) ?></div>
-                <div class="col-md-3"><strong>TDS PO IT (<?= $inv['TDSPoITPercent'] ?>%):</strong> ₹ <?= nf($inv['TDSPoITAmount']) ?></div>
-                <div class="col-md-3"><strong>PO Net Payable:</strong> ₹ <?= nf($inv['POAmount'] + $inv['POGSTAmount'] + $inv['POITAmount'] - ($inv['TDSPoGSTAmount'] + $inv['TDSPoITAmount'])) ?></div>
+                <div class="col-md-3">
+                    <strong>TDS PO GST (<?= $tdsPoGSTPercent ?>%):</strong> ₹ <?= nf($tdsPoGSTAmount) ?>
+                </div>
+                <div class="col-md-3">
+                    <strong>TDS PO IT (<?= $tdsPoITPercent ?>%):</strong> ₹ <?= nf($tdsPoITAmount) ?>
+                </div>
+                <div class="col-md-3">
+                    <strong>PO Net Payable:</strong> ₹ <?= nf($poNetPayable) ?>
+                </div>
             </div>
         </div>
+
 
         <!-- TAB 4: Bank & Other -->
         <div class="tab-pane fade" id="tab-bank-<?= $inv['Id'] ?>">
@@ -111,7 +147,6 @@ foreach($invoices as $inv):
             <div class="row mb-2">
                 <div class="col-md-4"><strong>Received From Section:</strong> <?= htmlspecialchars($inv['ReceivedFromSection']) ?></div>
                 <div class="col-md-4"><strong>Section DA Name:</strong> <?= htmlspecialchars($inv['SectionDAName']) ?></div>
-                <div class="col-md-4"><strong>PFMS No:</strong> <?= htmlspecialchars($inv['PFMSUniqueNo']) ?></div>
             </div>
             <div class="row mb-2">
                 <div class="col-md-4"><strong>Credit To:</strong> <?= $inv['CreditName'] ?></div>

@@ -18,9 +18,31 @@ if (!isset($_GET['id'])) {
 $billId = intval($_GET['id']);
 
 // Fetch bill details
-$stmt = $conn->prepare("SELECT be.*, bi.BillNumber, bi.BillReceivedDate, bi.ReceivedFromSection, bi.SectionDAName, bi.BillTypeId FROM bill_entry be left join bill_initial_entry bi on bi.Id = be.BillInitialId WHERE be.Id = ?");
+$stmt = $conn->prepare("
+    SELECT 
+        be.*,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        ia.ReceivedFromSection
+    FROM bill_entry be
+    INNER JOIN bill_initial_entry bi 
+        ON bi.Id = be.BillInitialId
+    LEFT JOIN (
+        SELECT 
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection
+        FROM bill_invoice_map bim
+        INNER JOIN invoice_master im 
+            ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    ) ia 
+        ON ia.BillInitialId = bi.Id
+    WHERE be.Id = ?
+");
 $stmt->execute([$billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
 
 if (!$bill || $bill['Status'] != 'Return') {
     die("Bill not found or not returned");

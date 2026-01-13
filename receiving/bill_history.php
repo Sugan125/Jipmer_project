@@ -22,13 +22,29 @@ $billId = intval($_GET['id']);
 // 1. Fetch Bill Master Details
 // ===============================
 $stmt = $conn->prepare("
-    SELECT b.*, bi.BillNumber, bi.BillReceivedDate, bi.ReceivedFromSection, btm.BillType
-    FROM bill_entry b
-    INNER JOIN bill_initial_entry bi ON bi.Id = b.BillInitialId
-    LEFT JOIN bill_type_master btm ON btm.Id = bi.BillTypeId
+    WITH InvoiceAgg AS (
+        SELECT
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection,
+            MAX(im.BillTypeId) AS BillTypeId
+        FROM bill_invoice_map bim
+        JOIN invoice_master im ON im.Id = bim.InvoiceId
+        WHERE bim.BillInitialId = ?
+        GROUP BY bim.BillInitialId
+    )
+    SELECT
+        b.*,
+        bi.BillNumber,
+        bi.BillReceivedDate,
+        ia.ReceivedFromSection,
+        btm.BillType
+    FROM bill_initial_entry bi
+    JOIN bill_entry b ON b.BillInitialId = bi.Id
+    LEFT JOIN InvoiceAgg ia ON ia.BillInitialId = bi.Id
+    LEFT JOIN bill_type_master btm ON btm.Id = ia.BillTypeId
     WHERE bi.Id = ?
 ");
-$stmt->execute([$billId]);
+$stmt->execute([$billId, $billId]);
 $bill = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$bill) {
@@ -65,12 +81,18 @@ $finalAccount = $finalStmt->fetch(PDO::FETCH_ASSOC);
 // 5. Fetch Attached Invoices
 // ===============================
 $invoiceStmt = $conn->prepare("
-    SELECT i.*
+    SELECT 
+        i.*,
+        so.SanctionOrderNo,
+        so.SanctionDate,
+        pm.POOrderNo
     FROM bill_invoice_map bim
-    INNER JOIN invoice_master i ON i.Id = bim.InvoiceId
+    JOIN invoice_master i ON i.Id = bim.InvoiceId
+    LEFT JOIN sanction_order_master so ON so.Id = i.SanctionId
+    LEFT JOIN po_master pm ON pm.Id = i.POId
     WHERE bim.BillInitialId = ?
 ");
-$invoiceStmt->execute([$bill['BillInitialId']]);
+$invoiceStmt->execute([$billId]);
 $invoices = $invoiceStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ===============================
@@ -79,7 +101,7 @@ $invoices = $invoiceStmt->fetchAll(PDO::FETCH_ASSOC);
 $returnedCount = 0;
 $passedCount = 0;
 foreach ($processHistory as $p) {
-    if ($p['Status'] === 'Returned') $returnedCount++;
+    if ($p['Status'] === 'Return') $returnedCount++;
     if ($p['Status'] === 'Pass')     $passedCount++;
 }
 ?>

@@ -9,10 +9,24 @@ if($billId <= 0){
 
 // Fetch bill_initial_entry + bill_entry + alloted employee
 $stmt = $conn->prepare("
-    SELECT bi.*, be.Status AS EntryStatus, e.EmployeeName AS AllotedDealingAsstName
+    SELECT 
+        bi.*,
+        be.Status AS EntryStatus,
+        e.EmployeeName AS AllotedDealingAsstName,
+        ia.ReceivedFromSection
     FROM bill_initial_entry bi
-    LEFT JOIN bill_entry be ON be.BillInitialId = bi.Id
-    LEFT JOIN employee_master e ON be.AllotedDealingAsst = e.Id
+    LEFT JOIN bill_entry be 
+        ON be.BillInitialId = bi.Id
+    LEFT JOIN employee_master e 
+        ON be.AllotedDealingAsst = e.Id
+    LEFT JOIN (
+        SELECT 
+            bim.BillInitialId,
+            MAX(im.ReceivedFromSection) AS ReceivedFromSection
+        FROM bill_invoice_map bim
+        JOIN invoice_master im ON im.Id = bim.InvoiceId
+        GROUP BY bim.BillInitialId
+    ) ia ON ia.BillInitialId = bi.Id
     WHERE bi.Id = ?
 ");
 $stmt->execute([$billId]);

@@ -89,6 +89,7 @@ ORDER BY MAX(bi.CreatedDate) DESC;
                 <th>Total TDS</th>
                 <th>Net Amount</th>
                 <th>Invoices</th>
+                <th>Bill PDF</th>
             </tr>
             </thead>
             <tbody>
@@ -110,6 +111,14 @@ ORDER BY MAX(bi.CreatedDate) DESC;
                         <button class="btn btn-info btn-sm viewInvoices" data-id="<?= $b['Id'] ?>">
                             <i class="fa fa-eye"></i> View
                         </button>
+                    </td>
+                    <td>
+                        <form method="post" action="../reports/generate_bill_pdf.php" target="_blank">
+                            <input type="hidden" name="bill_id" value="<?= $b['Id'] ?>">
+                            <button class="btn btn-success btn-sm">
+                                <i class="fa fa-file-pdf"></i> PDF
+                            </button>
+                        </form>
                     </td>
                 </tr>
             <?php endforeach; ?>
