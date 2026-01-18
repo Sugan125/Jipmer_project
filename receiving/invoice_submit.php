@@ -2,142 +2,164 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
 include '../config/db.php';
 include '../includes/auth.php';
+
 header('Content-Type: application/json');
 
-try{
-$gstAmt = $_POST['Amount'] * $_POST['GSTPercent'] / 100;
-$itAmt  = $_POST['Amount'] * $_POST['ITPercent'] / 100;
+try {
 
-$totalAmount = $_POST['Amount'] + $gstAmt + $itAmt;
+    /* ================= BASIC DATA ================= */
+    $amount = (float)$_POST['Amount'];
+    $tdsGPercent = (float)$_POST['TDSGSTPercent'];
+    $tdsIPercent = (float)$_POST['TDSITPercent'];
 
-$tdsG = $_POST['Amount'] * $_POST['TDSGSTPercent'] / 100;
-$tdsI = $_POST['Amount'] * $_POST['TDSITPercent'] / 100;
-//$sanctionIds = $_POST['SanctionId']; 
-$check = $conn->prepare("
-    SELECT COUNT(*) 
-    FROM invoice_master 
-    WHERE SanctionId = ?
-");
+    $tdsG = $amount * $tdsGPercent / 100;
+    $tdsI = $amount * $tdsIPercent / 100;
 
-// foreach ($sanctionIds as $sid) {
-//     $check->execute([$sid]);
-//     if ($check->fetchColumn() > 0) {
-//         echo json_encode([
-//             'status' => 'error',
-//             'message' => 'One of the selected sanctions is already billed'
-//         ]);
-//         exit;
-//     }
-// }
+    $totalAmount = $amount;
+    $netPayable  = $totalAmount - ($tdsG + $tdsI);
 
-$stmtsanction = $conn->prepare("
-    SELECT SanctionNetAmount 
-    FROM sanction_order_master 
-    WHERE Id = ?
-");
-// foreach ($sanctionIds as $sid) {
-//     $stmtsanction->execute([$sid]);
-//     $totalSanctionBalance += (float)$stmtsanction->fetchColumn();
-// }
+    /* ================= SANCTION IDS ================= */
+    $sanctionIds = $_POST['SanctionId'] ?? [];
 
-// if ($_POST['Amount'] > $totalSanctionBalance) {
-//     echo json_encode([
-//         'status' => 'error',
-//         'message' => 'Invoice amount exceeds combined sanction balance'
-//     ]);
-//     exit;
-// }
+    if (empty($sanctionIds)) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'No sanction selected'
+        ]);
+        exit;
+    }
 
-$netPayable = $totalAmount - ($tdsG + $tdsI);
+    /* ================= VALIDATE SANCTION BALANCE ================= */
+    $placeholders = implode(',', array_fill(0, count($sanctionIds), '?'));
 
-$stmt = $conn->prepare("
-INSERT INTO invoice_master
-(
- FinancialYearId, HOAId, DeptId, BillTypeId,
- CreditToId, DebitFromId,
+    $stmt = $conn->prepare("
+        SELECT SUM(SanctionNetAmount)
+        FROM sanction_order_master
+        WHERE Id IN ($placeholders)
+    ");
+    $stmt->execute($sanctionIds);
 
- InvoiceNo, InvoiceDate, VendorName,
+    $totalSanctionBalance = (float)$stmt->fetchColumn();
 
- POId, SanctionId,
+    if ($amount > $totalSanctionBalance) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Invoice amount exceeds combined sanction balance'
+        ]);
+        exit;
+    }
 
- BankName, IFSC, AccountNumber, PanNumber,
- ReceivedFromSection, SectionDAName,
+    /* ================= INSERT INVOICE ================= */
+    $stmt = $conn->prepare("
+        INSERT INTO invoice_master
+        (
+            FinancialYearId, HOAId, DeptId, BillTypeId,
+            CreditToId, DebitFromId,
 
- Amount, GSTPercent, GSTAmount,
- ITPercent, ITAmount,
- TotalAmount,
+            InvoiceNo, InvoiceDate, VendorName,
+            POId,
 
- TDSGSTPercent, TDSGSTAmount,
- TDSITPercent, TDSITAmount,
- NetPayable,
+            Amount, TotalAmount,
 
- CreatedBy
-)
-VALUES (
- ?,?,?,?,
- ?,?,
- ?,?,?,
- ?,?,
- ?,?,?,?,
- ?,?,
- ?,?,?,
- ?,?,
- ?,
- ?,?,
- ?,?,
- ?,
- ?
-)
-");
+            TDSGSTPercent, TDSGSTAmount,
+            TDSITPercent, TDSITAmount,
 
-$stmt->execute([
- $_POST['FinancialYearId'],
- $_POST['HOAId'],
- $_POST['DeptId'],
- $_POST['BillTypeId'],
+            NetPayable,
 
- $_POST['CreditToId'],
- $_POST['DebitFromId'],
+            BankName, IFSC, AccountNumber, PanNumber,
+            ReceivedFromSection, SectionDAName,
 
- $_POST['InvoiceNo'],
- $_POST['InvoiceDate'],
- $_POST['VendorName'],
+            CreatedBy
+        )
+        VALUES (
+            ?,?,?,?,?,?,
+            ?,?,?,?,
+            ?,?,
+            ?,?,
+            ?,?,
+            ?,
+            ?,?,?,?,
+            ?,?,
+            ?
+        )
+    ");
 
- $_POST['POId'],
- //$sid,
-  $_POST['SanctionId'],
+    $stmt->execute([
+        $_POST['FinancialYearId'],
+        $_POST['HOAId'],
+        $_POST['DeptId'],
+        $_POST['BillTypeId'],
 
- $_POST['BankName'],
- $_POST['IFSC'],
- $_POST['AccountNumber'],
- $_POST['PanNumber'],
- $_POST['ReceivedFromSection'],
- $_POST['SectionDAName'],
+        $_POST['CreditToId'],
+        $_POST['DebitFromId'],
 
- $_POST['Amount'],
- $_POST['GSTPercent'],
- $gstAmt,
+        $_POST['InvoiceNo'],
+        $_POST['InvoiceDate'],
+        $_POST['VendorName'],
 
- $_POST['ITPercent'],
- $itAmt,
- $totalAmount,
+        $_POST['POId'],
 
- $_POST['TDSGSTPercent'],
- $tdsG,
+        $amount,
+        $totalAmount,
 
- $_POST['TDSITPercent'],
- $tdsI,
+        $tdsGPercent,
+        $tdsG,
 
- $netPayable,
+        $tdsIPercent,
+        $tdsI,
 
- $_SESSION['user_id']
-]);
+        $netPayable,
 
+        $_POST['BankName'],
+        $_POST['IFSC'],
+        $_POST['AccountNumber'],
+        $_POST['PanNumber'],
 
+        $_POST['ReceivedFromSection'],
+        $_POST['SectionDAName'],
 
-echo json_encode(['status'=>'success']);
-}catch(Exception $e){
- echo json_encode(['status'=>'error','message'=>$e->getMessage()]);
+        $_SESSION['user_id']
+    ]);
+
+    $invoiceId = $conn->lastInsertId();
+
+    /* ================= MAP SANCTIONS ================= */
+    $mapStmt = $conn->prepare("
+        INSERT INTO invoice_sanction_map
+        (InvoiceId, SanctionId, AmountUsed)
+        VALUES (?,?,?)
+    ");
+
+    $remaining = $amount;
+
+    foreach ($sanctionIds as $sid) {
+
+        if ($remaining <= 0) break;
+
+        $balStmt = $conn->prepare("
+            SELECT SanctionNetAmount
+            FROM sanction_order_master
+            WHERE Id = ?
+        ");
+        $balStmt->execute([$sid]);
+
+        $bal = (float)$balStmt->fetchColumn();
+
+        $use = min($bal, $remaining);
+        $remaining -= $use;
+
+        $mapStmt->execute([$invoiceId, $sid, $use]);
+    }
+
+    echo json_encode(['status' => 'success']);
+
+} catch (Exception $e) {
+
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage()
+    ]);
 }

@@ -20,6 +20,59 @@ $debit = $conn->query("SELECT Id, DebitName FROM account_debit_master WHERE Stat
 <link rel="stylesheet" href="../css/all.min.css">
 <link rel="stylesheet" href="../css/style.css">
 <style>
+    #sanction_id {
+    min-height: 160px;
+    padding: 8px;
+    border-radius: 8px;
+    background: #f8fbff;
+    border: 1px solid #cfe2ff;
+}
+
+#sanction_id option {
+    padding: 6px;
+    margin-bottom: 3px;
+}
+
+#sanction_id option:checked {
+    background: #0d6efd linear-gradient(0deg, #0d6efd 0%, #0d6efd 100%);
+    color: #fff;
+}
+#sanction_gst_it_table table {
+    font-size: 14px;
+}
+#sanction_gst_it_table th, #sanction_gst_it_table td {
+    text-align: center;
+    vertical-align: middle;
+}
+.po-details {
+    display: none;
+    background: #f8fbff;
+    border: 1px solid #d6e4ff;
+    border-radius: 10px;
+    padding: 15px 20px;
+}
+
+.po-item {
+    background: #ffffff;
+    border: 1px solid #e3eafc;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.po-label {
+    display: block;
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.po-value {
+    display: block;
+    font-size: 15px;
+    color: #212529;
+    margin-top: 2px;
+}
 .page-content{margin-left:240px;padding:50px 30px;}
 .card{max-width:1200px;margin:auto;}
 .section-card{border:1px solid #dee2e6;border-radius:8px;padding:15px;margin-bottom:20px;background:#f9f9f9;}
@@ -80,97 +133,126 @@ small { color:green; font-weight: 600 }
 </div>
 </div>
 
-<!-- Section 2: Invoice & Sanction -->
-<div class="section-card">
-<div class="section-title">Invoice & Sanction Details</div>
-<div class="row g-3">
-    <div class="col-md-3"><label>Invoice No</label><input name="InvoiceNo" id="invoice_no" class="form-control" required></div>
-    <div class="col-md-3"><label>Invoice Date</label><input type="date" name="InvoiceDate" class="form-control" required></div>
-</div>
-</div>
-
 <!-- Section: PO & Sanction Mapping -->
 <div class="section-card">
-<div class="section-title">PO & Sanction Mapping</div>
+    <div class="section-title">PO & Sanction Mapping</div>
 
-<div class="row g-3">
-    <div class="col-md-4">
-        <label>Purchase Order</label>
-        <select name="POId" id="po_id" class="form-select" required>
-            <option value="">-- Select PO --</option>
-        </select>
+    <div class="row g-3">
+
+        <!-- PO Selection -->
+        <div class="col-md-4">
+            <label>Purchase Order</label>
+            <select name="POId" id="po_id" class="form-select" required>
+                <option value="">-- Select PO --</option>
+            </select>
+        </div>
+
+        <!-- PO Details Card -->
+        <div id="po_details_box" class="col-12 po-details mt-3">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="po-item">
+                        <span class="po-label">PO Number</span>
+                        <span id="po_no" class="po-value"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="po-item">
+                        <span class="po-label">PO Date</span>
+                        <span id="po_date" class="po-value"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="po-item">
+                        <span class="po-label">PO Amount</span>
+                        <span id="po_amount" class="po-value text-primary fw-bold"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="po-item">
+                        <span class="po-label">PO GST %</span>
+                        <span id="po_gst" class="po-value"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="po-item">
+                        <span class="po-label">PO IT %</span>
+                        <span id="po_it" class="po-value"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="po-item">
+                        <span class="po-label">PO Net Amount</span>
+                        <span id="po_net" class="po-value text-success fw-bold"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sanction Selection -->
+        <div class="col-md-4 mt-3 mt-md-0">
+            <label>Sanction Order</label>
+            <select name="SanctionId[]" id="sanction_id" class="form-select" multiple required></select>
+            <small class="text-primary fw-semibold">Select one or more sanctions</small>
+        </div>
     </div>
 
-    
-
-    <div class="col-md-4">
-    <label>Sanction Order</label>
-        <select name="SanctionId" id="sanction_id" class="form-select" required>
-            <option value="">-- Select Sanction --</option>
-        </select>
-        <!-- <select name="SanctionId[]" id="sanction_id" class="form-select" multiple required>  --multiple select
-        
-        </select>
-
-        <small class="text-muted">
-            Hold Ctrl (or Cmd) to select multiple sanctions
-        </small> -->
+    <!-- GST/IT Table -->
+    <div id="sanction_gst_it_table" class="mt-3" style="display:none;">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sanction Order No</th>
+                        <th>Sanction Amount</th>
+                        <th>GST %</th>
+                        <th>IT %</th>
+                        <th>Net Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- rows will be injected dynamically -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="col-md-4">
-    <label>Selected Sanction Amount</label>
-    <input readonly id="sanction_balance" class="form-control fw-bold text-success">
+    <!-- Totals Row -->
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <label>Total Sanction Amount</label>
+            <input id="po_total_sanction" class="form-control fw-bold text-primary" readonly>
+        </div>
+
+        <div class="col-md-3">
+            <label>Already Billed Amount</label>
+            <input id="po_billed_amount" class="form-control fw-bold text-danger" readonly>
+        </div>
+
+        <div class="col-md-3">
+            <label>Available Sanction Balance</label>
+            <input id="sanction_available_balance" class="form-control fw-bold text-success" readonly>
+        </div>
     </div>
 </div>
-
-<div class="row g-3 mt-2">
-    <div class="col-md-4">
-        <label>Total Sanction Amount</label>
-        <input id="po_total_sanction" class="form-control fw-bold text-primary" readonly>
-    </div>
-
-    <div class="col-md-4">
-        <label>Already Billed Amount</label>
-        <input id="po_billed_amount" class="form-control fw-bold text-danger" readonly>
-    </div>
-
-    <!-- <div class="col-md-4">
-        <label>Available PO Balance</label>
-        <input id="po_available_balance" class="form-control fw-bold text-success" readonly>
-    </div> -->
-
-    <div class="col-md-4">
-        <label>Available sanction Balance</label>
-        <input id="sanction_available_balance" class="form-control fw-bold text-success" readonly>
-    </div>
-</div>
-</div>
-
 <!-- Section 3: Amounts & Calculations -->
 <div class="section-card">
-<div class="section-title">Amount Details & Calculations</div>
+<div class="section-title">Invoice Details</div>
 <div class="row g-3">
+<div class="col-md-3"><label>Invoice No</label><input name="InvoiceNo" id="invoice_no" class="form-control" required></div>
+<div class="col-md-3"><label>Invoice Date</label><input type="date" name="InvoiceDate" class="form-control" required></div>
 
 <div class="col-md-3">
-<label>Amount</label>
+<label>Invoice Amount</label>
 <input type="number" step="0.01" id="amount" name="Amount" class="form-control">
 <div class="invalid-feedback">
     Invoice amount cannot exceed selected sanction balance.
 </div>
 </div>
 
-<div class="col-md-3">
-<label>GST %</label>
-<input type="number" step="0.01" id="gstp" name="GSTPercent" class="form-control">
-<small id="gst_amt"></small><br>
-<span id="gst_span" class="gst_msg"></span>
-</div>
-
-<div class="col-md-3">
-<label>IT %</label>
-<input type="number" step="0.01" id="itp" name="ITPercent" class="form-control">
-<small id="it_amt"></small>
-</div>
 
 <div class="col-md-3">
 <label>TDS GST %</label>
@@ -264,7 +346,8 @@ small { color:green; font-weight: 600 }
 
 <script>
 const LOGGED_IN_USER = "<?= $_SESSION['empname'] ?>";
-
+const TDS_THRESHOLD = 250000;
+const TDS_GST_FIXED = 2;
 $(document).ready(function () {
     $('#section_da').val(LOGGED_IN_USER);
 });
@@ -329,17 +412,28 @@ $(document).ready(function(){
 /* ================= LOAD PO ================= */
 function loadPO(){
     $.getJSON('get_po_list.php', function(res){
-        let opt='<option value="">-- Select PO --</option>';
-        $.each(res,function(i,row){
-            opt+=`<option value="${row.Id}">${row.POOrderNo} | Amount ₹${parseFloat(row.balance).toFixed(2)}</option>`;
+        let opt = '<option value="">-- Select PO --</option>';
+
+        $.each(res, function(i, row){
+            opt += `
+                <option 
+                    value="${row.Id}"
+                    data-pono="${row.POOrderNo}"
+                    data-podate="${row.POOrderDate}"
+                    data-poamount="${row.POAmount}"
+                    data-pogst="${row.POGSTPercent}"
+                    data-poit="${row.POITPercent}"
+                    data-ponet="${row.PONetAmount}"
+                >
+                    ${row.POOrderNo}
+                </option>`;
         });
+
         $('#po_id').html(opt);
     });
 }
 $(document).ready(loadPO);
 
-const GST_LIMIT_AMOUNT = 225000;
-const GST_FIXED_PERCENT = 2;
 /* ================= AMOUNT ENTRY================= */
 $('#amount').on('input', function () {
 
@@ -350,37 +444,61 @@ $('#amount').on('input', function () {
     } else {
         this.classList.remove('is-invalid');
     }
- /* 🔒 GST rule */
-    if (amt > GST_LIMIT_AMOUNT) {
-        $('#gstp')
-            .val(GST_FIXED_PERCENT)
-            .prop('readonly', true)
-            .addClass('bg-light');
-    } else {
-        $('#gstp')
-            .prop('readonly', false)
-            .removeClass('bg-light');
-    }
-    $('#gst_span').text('GST is fixed at 2% for amounts above ₹2,25,000');        
-    calcInvoice();           
-});
-$('#gstp').on('input', function () {
-
-    let amt = parseFloat($('#amount').val()) || 0;
-
-    if (amt > GST_LIMIT_AMOUNT) {
-        this.value = GST_FIXED_PERCENT;
-    }
 
     calcInvoice();
 });
+
 /* ================= PO CHANGE ================= */
 $('#po_id').change(function () {
 
     let poId = $(this).val();
+if (!poId) {
+    $('#po_details_box').slideUp();
+    return;
+}
+
+let poAmount = parseFloat($('#po_id option:selected').data('poamount')) || 0;
+
+if (poAmount > 250000) {
+
+    // 🔒 Fix TDS GST %
+    $('#tds_gst_p')
+        .val(2)
+        .prop('readonly', true)
+        .addClass('bg-light');
+
+    // 🔔 Make TDS IT mandatory
+    $('#tds_it_p')
+        .prop('required', true)
+        .addClass('border-danger');
+
+} else {
+
+    // 🔓 Allow edit
+    $('#tds_gst_p')
+        .prop('readonly', false)
+        .removeClass('bg-light');
+
+    $('#tds_it_p')
+        .prop('required', false)
+        .removeClass('border-danger');
+}
+/* Show PO details section */
+$('#po_details_box').slideDown();
+    let sel = $('#po_id option:selected');
+
+$('#po_no').text(sel.data('pono') || '-');
+$('#po_date').text(sel.data('podate') || '-');
+$('#po_amount').text(
+    sel.data('poamount') ? '₹ ' + parseFloat(sel.data('poamount')).toFixed(2) : '-'
+);
+$('#po_gst').text(sel.data('pogst') ? sel.data('pogst') + ' %' : '-');
+$('#po_it').text(sel.data('poit') ? sel.data('poit') + ' %' : '-');
+$('#po_net').text(
+    sel.data('ponet') ? '₹ ' + parseFloat(sel.data('ponet')).toFixed(2) : '-'
+);
 
     $('#sanction_id').html('<option>Loading...</option>');
-    $('#sanction_balance').val('0.00');
     $('#sanction_available_balance').val('0.00');
 
     selectedSanctionBalance = 0;
@@ -405,10 +523,19 @@ $('#po_id').change(function () {
 
         let opt = '<option value="">-- Select Sanction --</option>';
 
-        $.each(res, function (i, row) {
+       $.each(res, function (i, row) {
             opt += `
-                <option value="${row.Id}" data-balance="${row.balance}">
-                    ${row.SanctionOrderNo} | Amount ₹${parseFloat(row.balance).toFixed(2)}
+                <option 
+                    value="${row.Id}"
+                    data-balance="${row.balance}"
+                    data-no="${row.SanctionOrderNo}"
+                    data-date="${row.SanctionDate}"
+                    data-amount="${row.SanctionAmount}"
+                    data-gst="${row.GSTPercent}"
+                    data-it="${row.ITPercent}"
+                    data-net="${row.SanctionNetAmount}"
+                >
+                    ${row.SanctionOrderNo}
                 </option>`;
         });
 
@@ -429,19 +556,90 @@ $('#po_id').change(function () {
 
 //     $('#sanction_balance').val(totalBalance.toFixed(2));
 // });
+$('#tds_gst_p').on('input', function () {
+    let poAmount = parseFloat($('#po_id option:selected').data('poamount')) || 0;
 
+    if (poAmount > 250000) {
+        this.value = 2;
+    }
+});
 
 /* ================= SANCTION CHANGE ================= */
-$('#sanction_id').change(function () {
+$('#sanction_id').on('change', function () {
 
-    selectedSanctionBalance = parseFloat(
-        $('option:selected', this).data('balance')
-    ) || 0;
+    let totalBalance = 0;
+    let names = [], dates = [], amounts = [], nets = [];
 
-    $('#sanction_balance').val(selectedSanctionBalance.toFixed(2));
+    let tableRows = ''; // for GST/IT table
+
+    let totalSanction = 0, 
+   // totalGST = 0, totalIT = 0, 
+    totalNet = 0;
+
+    $('#sanction_id option:selected').each(function () {
+
+        let bal = parseFloat($(this).data('balance')) || 0;
+        let amt = parseFloat($(this).data('amount')) || 0;
+        let net = parseFloat($(this).data('net')) || 0;
+        let gst = parseFloat($(this).data('gst')) || 0;
+        let it  = parseFloat($(this).data('it')) || 0;
+
+        totalBalance += bal;
+
+        names.push($(this).data('no'));
+        dates.push($(this).data('date'));
+        amounts.push(amt.toFixed(2));
+        nets.push(net.toFixed(2));
+
+        totalSanction += amt;
+        // totalGST += gst;
+        // totalIT += it;
+        totalNet += net;
+
+        tableRows += `<tr>
+            <td>${$(this).data('no')}</td>
+            <td>₹ ${amt.toFixed(2)}</td>
+            <td>${gst.toFixed(2)} %</td>
+            <td>${it.toFixed(2)} %</td>
+            <td>₹ ${net.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    selectedSanctionBalance = totalBalance;
+
+    if (totalBalance > 0) {
+        $('#sanction_details_box').slideDown();
+        $('#sanction_gst_it_table').slideDown();
+    } else {
+        $('#sanction_details_box').slideUp();
+        $('#sanction_gst_it_table').slideUp();
+    }
+
+    // Display combined info
+    $('#san_no').text(names.join(', ') || '-');
+    $('#san_date').text(dates.join(', ') || '-');
+    $('#san_amount').text('₹ ' + totalSanction.toFixed(2));
+    $('#san_net').text('₹ ' + totalNet.toFixed(2));
+
+    // Inject table rows + footer for totals
+    $('#sanction_gst_it_table tbody').html(tableRows);
+
+    // Add totals row
+    let tfoot = `<tr class="table-secondary fw-bold">
+        <td>Total</td>
+        <td>₹ ${totalSanction.toFixed(2)}</td>
+        <td></td>
+        <td></td>
+        <td>₹ ${totalNet.toFixed(2)}</td>
+    </tr>`;
+
+    $('#sanction_gst_it_table tbody').append(tfoot);
 
     updateAvailableSanctionBalance();
 });
+
+
+
 
 
 
@@ -466,24 +664,21 @@ function updateAvailableSanctionBalance() {
 /* ================= CALCULATIONS ================= */
 function percentCalc(base,p){return (base*p/100)||0;}
 
-function calcInvoice(){
-    let a=+$('#amount').val()||0;
-    let gst=percentCalc(a,+$('#gstp').val());
-    let it=percentCalc(a,+$('#itp').val());
-    let tdsG=percentCalc(a,+$('#tds_gst_p').val());
-    let tdsI=percentCalc(a,+$('#tds_it_p').val());
+function calcInvoice() {
 
-    let total=a+gst+it;
-    let tdsTotal=tdsG+tdsI;
+    let amount = +$('#amount').val() || 0;
 
-    $('#gst_amt').text('GST: '+gst.toFixed(2));
-    $('#it_amt').text('IT: '+it.toFixed(2));
-    $('#tds_gst_amt').text('TDS GST: '+tdsG.toFixed(2));
-    $('#tds_it_amt').text('TDS IT: '+tdsI.toFixed(2));
+    let tdsG = percentCalc(amount, +$('#tds_gst_p').val());
+    let tdsI = percentCalc(amount, +$('#tds_it_p').val());
 
-    $('#invoice_total').val(total.toFixed(2));
+    let tdsTotal = tdsG + tdsI;
+
+    $('#tds_gst_amt').text('TDS GST: ' + tdsG.toFixed(2));
+    $('#tds_it_amt').text('TDS IT: ' + tdsI.toFixed(2));
+
+    $('#invoice_total').val(amount.toFixed(2));
     $('#tds_total').val(tdsTotal.toFixed(2));
-    $('#net_payable').val((total-tdsTotal).toFixed(2));
+    $('#net_payable').val((amount - tdsTotal).toFixed(2));
 }
 $('input').on('input',calcInvoice);
 
@@ -499,7 +694,23 @@ $('#tds_it_p').blur(function(){
 
 /* ================= FORM SUBMIT ================= */
 $('#invoiceForm').submit(function(e){
+
+
     e.preventDefault();
+
+    let poAmount = parseFloat($('#po_id option:selected').data('poamount')) || 0;
+let tdsIT = $('#tds_it_p').val();
+
+if (poAmount > 250000 && !tdsIT) {
+    Swal.fire(
+        'TDS IT Required',
+        'TDS IT % is mandatory when PO amount exceeds ₹2,50,000',
+        'warning'
+    );
+    $('#tds_it_p').focus();
+    return;
+}
+
 if (isInvoiceDuplicate) {
         Swal.fire(
             'Error',
@@ -510,8 +721,6 @@ if (isInvoiceDuplicate) {
         return false;
     }
     let invoiceAmt=+$('#amount').val()||0;
-    let bal=+$('#sanction_balance').val()||0;
-
 
     if (invoiceAmt > selectedSanctionBalance) {
         Swal.fire(
@@ -523,10 +732,7 @@ if (isInvoiceDuplicate) {
         return;
     }
 
-    if(invoiceAmt>bal){
-        Swal.fire('Invalid Amount','Invoice exceeds available sanction','error');
-        return;
-    }
+   
 
     $.post('invoice_submit.php',$(this).serialize(),function(r){
         if(r.status==='success'){

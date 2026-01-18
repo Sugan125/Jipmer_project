@@ -10,8 +10,14 @@ $sql = "
 SELECT
     s.Id,
     s.SanctionOrderNo,
+    s.SanctionDate,
+    s.SanctionAmount,
+    s.GSTPercent,
+    s.GSTAmount,
+    s.ITPercent,
+    s.ITAmount,
     s.SanctionNetAmount,
-    s.SanctionNetAmount AS balance
+    s.SanctionAmount AS balance
 FROM sanction_order_master s
 WHERE s.POId = ?
 AND NOT EXISTS (
@@ -19,7 +25,6 @@ AND NOT EXISTS (
     FROM invoice_master i
     WHERE i.SanctionId = s.Id
 )";
-
 $stmt = $conn->prepare($sql);
 $stmt->execute([$poId]);
 
