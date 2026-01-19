@@ -208,9 +208,11 @@ small { color:green; font-weight: 600 }
                     <tr>
                         <th>Sanction Order No</th>
                         <th>Sanction Amount</th>
-                        <th>GST %</th>
-                        <th>IT %</th>
-                        <th>Net Amount</th>
+<th>Used Amount</th>
+<th>Balance Amount</th>
+<th>GST %</th>
+<th>IT %</th>
+<th>Net Amount</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -585,73 +587,68 @@ $('#tds_gst_p').on('input', function () {
 $('#sanction_id').on('change', function () {
 
     let totalBalance = 0;
-    let names = [], dates = [], amounts = [], nets = [];
+    let totalUsed = 0;
+    
+    let totalSanction = 0;
+    let totalNet = 0;
 
-    let tableRows = ''; // for GST/IT table
-
-    let totalSanction = 0, 
-   // totalGST = 0, totalIT = 0, 
-    totalNet = 0;
+    let tableRows = '';
 
     $('#sanction_id option:selected').each(function () {
 
-        let bal = parseFloat($(this).data('balance')) || 0;
-        let amt = parseFloat($(this).data('amount')) || 0;
-        let net = parseFloat($(this).data('net')) || 0;
+        let sanctionAmt = parseFloat($(this).data('amount')) || 0;
+        let balanceAmt  = parseFloat($(this).data('balance')) || 0;
+
+        let usedAmt = sanctionAmt - balanceAmt;
+        if (usedAmt < 0) usedAmt = 0;
+
         let gst = parseFloat($(this).data('gst')) || 0;
         let it  = parseFloat($(this).data('it')) || 0;
+        let net = parseFloat($(this).data('net')) || 0;
 
-        totalBalance += bal;
-
-        names.push($(this).data('no'));
-        dates.push($(this).data('date'));
-        amounts.push(amt.toFixed(2));
-        nets.push(net.toFixed(2));
-
-        totalSanction += amt;
-        // totalGST += gst;
-        // totalIT += it;
+        totalSanction += sanctionAmt;
+        totalUsed += usedAmt;
+        totalBalance += balanceAmt;
         totalNet += net;
 
-        tableRows += `<tr>
-            <td>${$(this).data('no')}</td>
-            <td>₹ ${amt.toFixed(2)}</td>
-            <td>${gst.toFixed(2)} %</td>
-            <td>${it.toFixed(2)} %</td>
-            <td>₹ ${net.toFixed(2)}</td>
-        </tr>`;
+        tableRows += `
+            <tr>
+                <td>${$(this).data('no')}</td>
+                <td>₹ ${sanctionAmt.toFixed(2)}</td>
+                <td class="text-danger">₹ ${usedAmt.toFixed(2)}</td>
+                <td class="text-success">₹ ${balanceAmt.toFixed(2)}</td>
+                <td>${gst.toFixed(2)} %</td>
+                <td>${it.toFixed(2)} %</td>
+                <td>₹ ${net.toFixed(2)}</td>
+            </tr>
+        `;
     });
 
     selectedSanctionBalance = totalBalance;
 
-    if (totalBalance > 0) {
-        $('#sanction_details_box').slideDown();
+    if (totalSanction > 0) {
         $('#sanction_gst_it_table').slideDown();
     } else {
-        $('#sanction_details_box').slideUp();
         $('#sanction_gst_it_table').slideUp();
     }
 
-    // Display combined info
-    $('#san_no').text(names.join(', ') || '-');
-    $('#san_date').text(dates.join(', ') || '-');
-    $('#san_amount').text('₹ ' + totalSanction.toFixed(2));
-    $('#san_net').text('₹ ' + totalNet.toFixed(2));
-
-   
-    // Inject table rows + footer for totals
+    // Inject rows
     $('#sanction_gst_it_table tbody').html(tableRows);
 
-    // Add totals row
-    let tfoot = `<tr class="table-secondary fw-bold">
-        <td>Total</td>
-        <td>₹ ${totalSanction.toFixed(2)}</td>
-        <td></td>
-        <td></td>
-        <td>₹ ${totalNet.toFixed(2)}</td>
-    </tr>`;
+    // Footer totals
+    let footer = `
+        <tr class="table-secondary fw-bold">
+            <td>Total</td>
+            <td>₹ ${totalSanction.toFixed(2)}</td>
+            <td class="text-danger">₹ ${totalUsed.toFixed(2)}</td>
+            <td class="text-success">₹ ${totalBalance.toFixed(2)}</td>
+            <td></td>
+            <td></td>
+            <td>₹ ${totalNet.toFixed(2)}</td>
+        </tr>
+    `;
 
-    $('#sanction_gst_it_table tbody').append(tfoot);
+    $('#sanction_gst_it_table tbody').append(footer);
 
     updateAvailableSanctionBalance();
 });
