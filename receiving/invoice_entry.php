@@ -348,6 +348,7 @@ small { color:green; font-weight: 600 }
 const LOGGED_IN_USER = "<?= $_SESSION['empname'] ?>";
 const TDS_THRESHOLD = 250000;
 const TDS_GST_FIXED = 2;
+const TDS_IT_THRESHOLD = 30000;
 $(document).ready(function () {
     $('#section_da').val(LOGGED_IN_USER);
 });
@@ -467,22 +468,38 @@ if (poAmount > 250000) {
         .prop('readonly', true)
         .addClass('bg-light');
 
-    // 🔔 Make TDS IT mandatory
-    $('#tds_it_p')
-        .prop('required', true)
-        .addClass('border-danger');
-
 } else {
 
     // 🔓 Allow edit
     $('#tds_gst_p')
         .prop('readonly', false)
         .removeClass('bg-light');
+}
 
+if (poAmount > 30000) {
+    $('#tds_it_p')
+        .prop('required', true)
+        .addClass('border-danger');
+} else {
     $('#tds_it_p')
         .prop('required', false)
-        .removeClass('border-danger');
+        .removeClass('border-danger')
+        .val('');
 }
+
+$('#tds_it_p').blur(function () {
+    let v = +this.value;
+
+    if (v !== 0 && v !== 2 && v !== 10) {
+        Swal.fire('Invalid', 'Only 2% or 10% allowed', 'warning');
+        this.value = '';
+        $(this).addClass('border-danger');
+        this.focus();
+    } else if (v === 2 || v === 10) {
+        $(this).removeClass('border-danger');
+    }
+});
+
 /* Show PO details section */
 $('#po_details_box').slideDown();
     let sel = $('#po_id option:selected');
@@ -621,6 +638,7 @@ $('#sanction_id').on('change', function () {
     $('#san_amount').text('₹ ' + totalSanction.toFixed(2));
     $('#san_net').text('₹ ' + totalNet.toFixed(2));
 
+   
     // Inject table rows + footer for totals
     $('#sanction_gst_it_table tbody').html(tableRows);
 
@@ -701,15 +719,16 @@ $('#invoiceForm').submit(function(e){
     let poAmount = parseFloat($('#po_id option:selected').data('poamount')) || 0;
 let tdsIT = $('#tds_it_p').val();
 
-if (poAmount > 250000 && !tdsIT) {
+if (poAmount > 30000 && !tdsIT) {
     Swal.fire(
         'TDS IT Required',
-        'TDS IT % is mandatory when PO amount exceeds ₹2,50,000',
+        'TDS IT % is mandatory when PO amount exceeds ₹30,000',
         'warning'
     );
     $('#tds_it_p').focus();
-    return;
+    return false;
 }
+
 
 if (isInvoiceDuplicate) {
         Swal.fire(

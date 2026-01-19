@@ -7,24 +7,35 @@ header('Content-Type: application/json');
 $poId = (int)$_GET['POId'];
 
 $sql = "
-SELECT
+SELECT 
     s.Id,
     s.SanctionOrderNo,
     s.SanctionDate,
     s.SanctionAmount,
     s.GSTPercent,
-    s.GSTAmount,
     s.ITPercent,
-    s.ITAmount,
     s.SanctionNetAmount,
-    s.SanctionAmount AS balance
+
+    ISNULL(used.used_amount, 0) AS used_amount,
+
+    (s.SanctionAmount - ISNULL(used.used_amount, 0)) AS balance
+
 FROM sanction_order_master s
+
+LEFT JOIN (
+    SELECT 
+        SanctionId,
+        SUM(SanctionBaseAmount) AS used_amount
+    FROM invoice_sanction_map
+    GROUP BY SanctionId
+) used ON used.SanctionId = s.Id
+
 WHERE s.POId = ?
-AND NOT EXISTS (
-    SELECT 1
-    FROM invoice_master i
-    WHERE i.SanctionId = s.Id
-)";
+AND (s.SanctionAmount - ISNULL(used.used_amount, 0)) > 0
+
+ORDER BY s.SanctionOrderNo
+";
+
 $stmt = $conn->prepare($sql);
 $stmt->execute([$poId]);
 

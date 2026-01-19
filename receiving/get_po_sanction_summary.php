@@ -13,12 +13,17 @@ $poId = (int)$_GET['POId'];
 
 $sql = "
 SELECT
-    ISNULL(SUM(s.SanctionAmount),0) AS total_sanction,
-    ISNULL(SUM(i.NetPayable),0) AS billed_amount,
-    ISNULL(SUM(s.SanctionAmount),0) - ISNULL(SUM(i.NetPayable),0) AS available_balance
+    SUM(s.SanctionAmount) AS total_sanction,
+    SUM(ISNULL(b.used_amount, 0)) AS billed_amount,
+    SUM(s.SanctionAmount - ISNULL(b.used_amount, 0)) AS available_balance
 FROM sanction_order_master s
-LEFT JOIN invoice_master i
-    ON i.SanctionId = s.Id
+LEFT JOIN (
+    SELECT
+        SanctionId,
+        SUM(SanctionBaseAmount) AS used_amount
+    FROM invoice_sanction_map
+    GROUP BY SanctionId
+) b ON b.SanctionId = s.Id
 WHERE s.POId = ?
 ";
 

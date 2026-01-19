@@ -36,9 +36,16 @@ try {
     $placeholders = implode(',', array_fill(0, count($sanctionIds), '?'));
 
     $stmt = $conn->prepare("
-        SELECT SUM(SanctionNetAmount)
-        FROM sanction_order_master
-        WHERE Id IN ($placeholders)
+        SELECT SUM(
+            s.SanctionAmount - ISNULL(used.used_amount, 0)
+        )
+        FROM sanction_order_master s
+        LEFT JOIN (
+            SELECT SanctionId, SUM(SanctionBaseAmount) AS used_amount
+            FROM invoice_sanction_map
+            GROUP BY SanctionId
+        ) used ON used.SanctionId = s.Id
+        WHERE s.Id IN ($placeholders)
     ");
     $stmt->execute($sanctionIds);
 
@@ -129,30 +136,58 @@ try {
     /* ================= MAP SANCTIONS ================= */
     $mapStmt = $conn->prepare("
         INSERT INTO invoice_sanction_map
-        (InvoiceId, SanctionId, AmountUsed)
-        VALUES (?,?,?)
+(
+    InvoiceId,
+    SanctionId,
+    SanctionBaseAmount,
+    GSTAmount,
+    ITAmount,
+    NetAmount
+)
+VALUES (?, ?, ?, ?, ?, ?)
     ");
 
     $remaining = $amount;
 
-    foreach ($sanctionIds as $sid) {
+   foreach ($sanctionIds as $sid) {
 
-        if ($remaining <= 0) break;
+    if ($remaining <= 0) break;
 
-        $balStmt = $conn->prepare("
-            SELECT SanctionNetAmount
-            FROM sanction_order_master
-            WHERE Id = ?
-        ");
-        $balStmt->execute([$sid]);
+    $stmt = $conn->prepare("
+        SELECT SanctionAmount, GSTPercent, ITPercent
+        FROM sanction_order_master
+        WHERE Id = ?
+    ");
+    $stmt->execute([$sid]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $bal = (float)$balStmt->fetchColumn();
+    // Get already used amount
+    $usedStmt = $conn->prepare("
+        SELECT ISNULL(SUM(SanctionBaseAmount),0)
+        FROM invoice_sanction_map
+        WHERE SanctionId = ?
+    ");
+    $usedStmt->execute([$sid]);
+    $used = (float)$usedStmt->fetchColumn();
 
-        $use = min($bal, $remaining);
-        $remaining -= $use;
+    $available = $row['SanctionAmount'] - $used;
 
-        $mapStmt->execute([$invoiceId, $sid, $use]);
-    }
+    $baseUsed = min($available, $remaining);
+    $remaining -= $baseUsed;
+
+    $gstAmt = $baseUsed * $row['GSTPercent'] / 100;
+    $itAmt  = $baseUsed * $row['ITPercent'] / 100;
+    $netAmt = $baseUsed + $gstAmt + $itAmt;
+
+    $mapStmt->execute([
+        $invoiceId,
+        $sid,
+        $baseUsed,
+        $gstAmt,
+        $itAmt,
+        $netAmt
+    ]);
+}
 
     echo json_encode(['status' => 'success']);
 
