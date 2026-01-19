@@ -76,7 +76,7 @@ try {
 
             NetPayable,
 
-            BankName, IFSC, AccountNumber, PanNumber,
+            BankName, IFSC, AccountNumber, PanNumber,PFMSNumber,
             ReceivedFromSection, SectionDAName,
 
             CreatedBy
@@ -88,7 +88,7 @@ try {
             ?,?,
             ?,?,
             ?,
-            ?,?,?,?,
+            ?,?,?,?,?,
             ?,?,
             ?
         )
@@ -124,6 +124,7 @@ try {
         $_POST['IFSC'],
         $_POST['AccountNumber'],
         $_POST['PanNumber'],
+        $_POST['PFMSNumber'],
 
         $_POST['ReceivedFromSection'],
         $_POST['SectionDAName'],

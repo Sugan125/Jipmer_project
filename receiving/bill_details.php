@@ -46,14 +46,23 @@ $invoices = $conn->query("
 <form id="billDetailsForm">
 
 <div class="row g-3 mb-4">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <label class="form-label fw-bold">Bill Number</label>
         <input type="text" name="BillNumber" class="form-control" placeholder="Enter Bill Number" required>
     </div>
-    <div class="col-md-6">
-        <label class="form-label fw-bold">Bill Received Date</label>
-        <input type="date" name="BillReceivedDate" class="form-control" required>
+     <div class="col-md-4">
+        <label class="form-label fw-bold">Transaction Number</label>
+        <input type="text" name="TransNumber" class="form-control" placeholder="Enter Transaction Number" required>
     </div>
+   <div class="col-md-4">
+    <label class="form-label fw-bold">Bill Received Date</label>
+    <input type="date" 
+           name="BillReceivedDate" 
+           class="form-control" 
+           required
+           value="<?= date('Y-m-d') ?>" 
+           readonly>
+</div>
 </div>
 
 <h5 class="mb-3">Attach Invoices</h5>

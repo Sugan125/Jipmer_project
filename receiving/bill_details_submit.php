@@ -23,7 +23,7 @@ try {
         $placeholders = implode(',', array_fill(0, count($invoiceIds), '?'));
 
         $stmtInv = $conn->prepare("
-            SELECT TotalAmount, GSTAmount, TDS
+            SELECT TotalAmount,  TDSGSTAmount, TDSITAmount
             FROM invoice_master
             WHERE Id IN ($placeholders)
         ");
@@ -32,26 +32,25 @@ try {
 
         foreach ($selectedInvoices as $inv) {
             $totalAmount += $inv['TotalAmount'];
-            $totalGST += $inv['GSTAmount'];
-            $totalTDS += $inv['TDS'];
+             $totalTDS += ($inv['TDSGSTAmount'] + $inv['TDSITAmount']);
         }
 
-        $grossTotal = $totalAmount + $totalGST;
+        $grossTotal = $totalAmount;
         $netTotal = $grossTotal - $totalTDS;
     }
 
     // Insert into bill_initial_entry with totals
     $stmt = $conn->prepare("
         INSERT INTO bill_initial_entry
-        (BillNumber, BillReceivedDate, CreatedBy, CreatedDate, Status, TotalAmount, TotalGST, TotalTDS, GrossTotal, NetTotal)
-        VALUES (?, ?, ?, GETDATE(), 'DRAFT', ?, ?, ?, ?, ?)
+        (BillNumber, TransNumber, BillReceivedDate, CreatedBy, CreatedDate, Status, TotalAmount, TotalTDS, GrossTotal, NetTotal)
+        VALUES (?, ?, ?, ?, GETDATE(), 'DRAFT', ?, ?, ?, ?)
     ");
     $stmt->execute([
         $_POST['BillNumber'],
+        $_POST['TransNumber'],
         $_POST['BillReceivedDate'],
         $_SESSION['user_id'],
         $totalAmount,
-        $totalGST,
         $totalTDS,
         $grossTotal,
         $netTotal

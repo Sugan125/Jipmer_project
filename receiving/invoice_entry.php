@@ -315,9 +315,20 @@ small { color:green; font-weight: 600 }
 <div class="section-title">Bank & Account Details</div>
 <div class="row g-3">
      <div class="col-md-3"><label>PAN Number</label><input name="PanNumber" class="form-control"></div>
-    <div class="col-md-3"><label>Bank Name</label><input name="BankName" class="form-control"></div>
+
+<div class="col-md-3"><label>PFMS Unique Number</label><input name="PFMSNumber" class="form-control"></div>
+     <div class="col-md-3"><label>Bank Name</label><input name="BankName" class="form-control"></div>
     <div class="col-md-3"><label>IFSC</label><input name="IFSC" class="form-control"></div>
     <div class="col-md-3"><label>Account Number</label><input name="AccountNumber" class="form-control"></div>
+   <div class="col-md-3">
+        <label>Debit From</label>
+        <select name="DebitFromId" class="form-select">
+            <option value="">-- Select Debit Account --</option>
+            <?php foreach($debit as $d): ?>
+                <option value="<?= $d['Id'] ?>"><?= $d['DebitName'] ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
     <div class="col-md-3">
         <label>Credit To</label>
         <select name="CreditToId" class="form-select">
@@ -327,15 +338,7 @@ small { color:green; font-weight: 600 }
             <?php endforeach; ?>
         </select>
     </div>
-    <div class="col-md-3">
-        <label>Debit From</label>
-        <select name="DebitFromId" class="form-select">
-            <option value="">-- Select Debit Account --</option>
-            <?php foreach($debit as $d): ?>
-                <option value="<?= $d['Id'] ?>"><?= $d['DebitName'] ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    
 </div>
 </div>
 
@@ -455,112 +458,149 @@ $('#amount').on('input', function () {
 $('#po_id').change(function () {
 
     let poId = $(this).val();
-if (!poId) {
-    $('#po_details_box').slideUp();
-    return;
-}
+    if (!poId) {
+        $('#po_details_box').slideUp();
+        return;
+    }
 
-let poAmount = parseFloat($('#po_id option:selected').data('poamount')) || 0;
+    // Selected PO
+    let sel = $('#po_id option:selected');
+    let poAmount = parseFloat(sel.data('poamount')) || 0;
+    let poGST = parseFloat(sel.data('pogst')) || 0;
 
-if (poAmount > 250000) {
+    /* ---------- TDS GST Setup ---------- */
+    if (poGST > 0) {
+        // Required and empty initially
+        $('#tds_gst_p')
+            .prop('required', true)
+            .addClass('border-danger')
+            .removeClass('bg-light')
+            .val('');
+    } else {
+        // Optional
+        $('#tds_gst_p')
+            .prop('required', false)
+            .removeClass('border-danger bg-light')
+            .val('');
+    }
 
-    // 🔒 Fix TDS GST %
-    $('#tds_gst_p')
-        .val(2)
-        .prop('readonly', true)
-        .addClass('bg-light');
+    // Remove previous handlers to avoid duplicates
+    $('#tds_gst_p').off('input blur');
 
-} else {
+    let tdsGstAlertShown = false;
 
-    // 🔓 Allow edit
-    $('#tds_gst_p')
-        .prop('readonly', false)
-        .removeClass('bg-light');
-}
+    // Validate dynamically
+    
+$('#tds_gst_p').off('blur').on('blur', function () {
+    let tdsVal = parseFloat(this.value) || 0;
+    let poGST = parseFloat($('#po_id option:selected').data('pogst')) || 0;
+    let inputField = this;
 
-if (poAmount > 30000) {
-    $('#tds_it_p')
-        .prop('required', true)
-        .addClass('border-danger');
-} else {
-    $('#tds_it_p')
-        .prop('required', false)
-        .removeClass('border-danger')
-        .val('');
-}
+    // Only show alert if PO GST > 0 and TDS GST <= 0
+    if (poGST > 0 && tdsVal <= 0 && !tdsGstAlertShown) {
+        tdsGstAlertShown = true; // lock alert
 
-$('#tds_it_p').blur(function () {
-    let v = +this.value;
-
-    if (v !== 0 && v !== 2 && v !== 10) {
-        Swal.fire('Invalid', 'Only 2% or 10% allowed', 'warning');
-        this.value = '';
         $(this).addClass('border-danger');
-        this.focus();
-    } else if (v === 2 || v === 10) {
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid TDS GST',
+            text: 'Since PO GST is greater than 0%, TDS GST cannot be 0'
+        }).then(() => {
+            inputField.value = '';
+            setTimeout(() => inputField.focus(), 100); // refocus safely
+            tdsGstAlertShown = false; // unlock alert
+        });
+    } else if (tdsVal > 0) {
         $(this).removeClass('border-danger');
     }
+
+    calcInvoice();
 });
+    /* ---------- TDS IT Setup ---------- */
+    $('#tds_it_p').prop('required', false).removeClass('border-danger');
 
-/* Show PO details section */
-$('#po_details_box').slideDown();
-    let sel = $('#po_id option:selected');
+    $('#tds_it_p').off('blur').on('blur', function () {
+        let v = parseFloat(this.value) || 0;
 
-$('#po_no').text(sel.data('pono') || '-');
-$('#po_date').text(sel.data('podate') || '-');
-$('#po_amount').text(
-    sel.data('poamount') ? '₹ ' + parseFloat(sel.data('poamount')).toFixed(2) : '-'
-);
-$('#po_gst').text(sel.data('pogst') ? sel.data('pogst') + ' %' : '-');
-$('#po_it').text(sel.data('poit') ? sel.data('poit') + ' %' : '-');
-$('#po_net').text(
-    sel.data('ponet') ? '₹ ' + parseFloat(sel.data('ponet')).toFixed(2) : '-'
-);
+        // empty → treat as 0
+        if (this.value === '' || isNaN(v)) this.value = 0;
 
+        // 0 always allowed
+        if (v === 0) return;
+
+        // 2 or 10
+        if (v === 2 || v === 10) {
+            if (poAmount <= 30000) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Not Allowed',
+                    text: 'TDS IT 2% or 10% is allowed only when PO Amount exceeds ₹30,000'
+                }).then(() => {
+                    this.value = 0;
+                    this.focus();
+                });
+            } else {
+                $(this).removeClass('border-danger');
+            }
+            return;
+        }
+
+        // Any other value
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Value',
+            text: 'Only 0, 2% or 10% are allowed'
+        }).then(() => {
+            this.value = 0;
+            this.focus();
+        });
+    });
+
+    /* ---------- Show PO details ---------- */
+    $('#po_details_box').slideDown();
+
+    $('#po_no').text(sel.data('pono') || '-');
+    $('#po_date').text(sel.data('podate') || '-');
+    $('#po_amount').text(sel.data('poamount') ? '₹ ' + poAmount.toFixed(2) : '-');
+    $('#po_gst').text(sel.data('pogst') ? sel.data('pogst') + ' %' : '-');
+    $('#po_it').text(sel.data('poit') ? sel.data('poit') + ' %' : '-');
+    $('#po_net').text(sel.data('ponet') ? '₹ ' + parseFloat(sel.data('ponet')).toFixed(2) : '-');
+
+    /* ---------- Reset Sanction ---------- */
     $('#sanction_id').html('<option>Loading...</option>');
     $('#sanction_available_balance').val('0.00');
-
     selectedSanctionBalance = 0;
     poAvailableBalance = 0;
 
-    if (!poId) return;
-
-    /* ---- PO SUMMARY ---- */
+    /* ---------- PO Summary ---------- */
     $.getJSON('get_po_sanction_summary.php', { POId: poId }, function (res) {
-
         poAvailableBalance = parseFloat(res.available_balance) || 0;
-
         $('#po_total_sanction').val(parseFloat(res.total_sanction).toFixed(2));
         $('#po_billed_amount').val(parseFloat(res.billed_amount).toFixed(2));
-      //  $('#po_available_balance').val(poAvailableBalance.toFixed(2));
-
         updateAvailableSanctionBalance();
     });
 
-    /* ---- SANCTION LIST ---- */
+    /* ---------- Sanction List ---------- */
     $.getJSON('get_sanction_by_po.php', { POId: poId }, function (res) {
-
         let opt = '<option value="">-- Select Sanction --</option>';
-
-       $.each(res, function (i, row) {
-            opt += `
-                <option 
-                    value="${row.Id}"
-                    data-balance="${row.balance}"
-                    data-no="${row.SanctionOrderNo}"
-                    data-date="${row.SanctionDate}"
-                    data-amount="${row.SanctionAmount}"
-                    data-gst="${row.GSTPercent}"
-                    data-it="${row.ITPercent}"
-                    data-net="${row.SanctionNetAmount}"
-                >
-                    ${row.SanctionOrderNo}
-                </option>`;
+        $.each(res, function (i, row) {
+            opt += `<option 
+                        value="${row.Id}"
+                        data-balance="${row.balance}"
+                        data-no="${row.SanctionOrderNo}"
+                        data-date="${row.SanctionDate}"
+                        data-amount="${row.SanctionAmount}"
+                        data-gst="${row.GSTPercent}"
+                        data-it="${row.ITPercent}"
+                        data-net="${row.SanctionNetAmount}"
+                    >${row.SanctionOrderNo}</option>`;
         });
-
         $('#sanction_id').html(opt);
     });
+
 });
+
 
 
 /* ================= SANCTION CHANGE MULTI================= */
@@ -575,13 +615,11 @@ $('#po_net').text(
 
 //     $('#sanction_balance').val(totalBalance.toFixed(2));
 // });
-$('#tds_gst_p').on('input', function () {
-    let poAmount = parseFloat($('#po_id option:selected').data('poamount')) || 0;
 
-    if (poAmount > 250000) {
-        this.value = 2;
-    }
-});
+
+// On PO change — set requirement
+
+
 
 /* ================= SANCTION CHANGE ================= */
 $('#sanction_id').on('change', function () {

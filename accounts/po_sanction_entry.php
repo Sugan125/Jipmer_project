@@ -54,6 +54,11 @@ small{color:#198754;font-weight:600;}
     </div>
 
     <div class="col-md-3">
+        <label>GST Number</label>
+        <input type="text" name="GSTNumber" class="form-control" required>
+    </div>
+
+    <div class="col-md-3">
         <label>PO Amount</label>
         <input type="number" step="0.01" id="po_amount" name="POAmount" class="form-control" required>
     </div>

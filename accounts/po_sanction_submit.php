@@ -33,18 +33,20 @@ try{
         (
             POOrderNo,
             POOrderDate,
+            GSTNumber,
             POAmount,
             POGSTPercent,
             POITPercent,
             PONetAmount,
             CreatedBy
         )
-        VALUES (?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?)
     ");
 
     $poStmt->execute([
         $_POST['PONumber'],
         $_POST['PODate'],
+        $_POST['GSTNumber'],
         $poAmount,
         $poGstP,
         $poItP,
