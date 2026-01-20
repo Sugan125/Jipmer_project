@@ -1,6 +1,5 @@
 <?php
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 include '../config/db.php';
@@ -9,6 +8,10 @@ include '../includes/auth.php';
 header('Content-Type: application/json');
 
 try {
+
+    /* ================= START TRANSACTION ================= */
+    $conn->beginTransaction();
+
 
     /* ================= BASIC DATA ================= */
     $amount = (float)$_POST['Amount'];
@@ -63,7 +66,7 @@ try {
     $stmt = $conn->prepare("
         INSERT INTO invoice_master
         (
-            FinancialYearId, HOAId, DeptId, BillTypeId,
+            FinancialYearId, HOAId, EcrPageNo, DeptId, BillTypeId,
             CreditToId, DebitFromId,
 
             InvoiceNo, InvoiceDate, VendorName,
@@ -76,19 +79,17 @@ try {
 
             NetPayable,
 
-            BankName, IFSC, AccountNumber, PanNumber,PFMSNumber,
             ReceivedFromSection, SectionDAName,
 
             CreatedBy
         )
         VALUES (
-            ?,?,?,?,?,?,
+            ?,?,?,?,?,?,?,
             ?,?,?,?,
             ?,?,
             ?,?,
             ?,?,
             ?,
-            ?,?,?,?,?,
             ?,?,
             ?
         )
@@ -97,6 +98,7 @@ try {
     $stmt->execute([
         $_POST['FinancialYearId'],
         $_POST['HOAId'],
+        $_POST['Ecrpageno'],
         $_POST['DeptId'],
         $_POST['BillTypeId'],
 
@@ -120,11 +122,7 @@ try {
 
         $netPayable,
 
-        $_POST['BankName'],
-        $_POST['IFSC'],
-        $_POST['AccountNumber'],
-        $_POST['PanNumber'],
-        $_POST['PFMSNumber'],
+
 
         $_POST['ReceivedFromSection'],
         $_POST['SectionDAName'],
@@ -134,6 +132,27 @@ try {
 
     $invoiceId = $conn->lastInsertId();
 
+      $conn->prepare("
+        UPDATE po_bank_details
+        SET is_active = 0
+        WHERE po_id = ? AND is_active = 1
+    ")->execute([$_POST['POId']]);
+
+    $conn->prepare("
+        INSERT INTO po_bank_details (
+            po_id, pan_number, pfms_number,
+            bank_name, ifsc, account_number,
+            is_active, created_at
+        )
+        VALUES (?,?,?,?,?,?,1,GETDATE())
+    ")->execute([
+        $_POST['POId'],
+        $_POST['PanNumber'] ?? null,
+        $_POST['PFMSNumber'] ?? null,
+        $_POST['BankName'] ?? null,
+        $_POST['IFSC'] ?? null,
+        $_POST['AccountNumber'] ?? null
+    ]);
     /* ================= MAP SANCTIONS ================= */
     $mapStmt = $conn->prepare("
         INSERT INTO invoice_sanction_map
@@ -189,10 +208,14 @@ VALUES (?, ?, ?, ?, ?, ?)
         $netAmt
     ]);
 }
-
+ $conn->commit();
     echo json_encode(['status' => 'success']);
-
 } catch (Exception $e) {
+
+    /* ================= ROLLBACK ================= */
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
 
     echo json_encode([
         'status' => 'error',

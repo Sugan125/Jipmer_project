@@ -86,7 +86,36 @@ small{color:#198754;font-weight:600;}
     </div>
 </div>
 </div>
+<div class="section-card">
+    <div class="section-title">Bank & Account Details</div>
 
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label>PAN Number</label>
+            <input name="PanNumber" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>PFMS Unique Number</label>
+            <input name="PFMSNumber" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>Bank Name</label>
+            <input name="BankName" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>IFSC</label>
+            <input name="IFSC" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>Account Number</label>
+            <input name="AccountNumber" class="form-control">
+        </div>
+    </div>
+</div>
 <!-- ================= SANCTION SECTION ================= -->
 <div class="section-card">
 <div class="section-title d-flex justify-content-between">

@@ -8,18 +8,19 @@ $rows = $conn->query("
     SELECT
         bim.BillInitialId,
 
-        SUM(im.Amount) AS TotalAmount,
-        SUM(im.GSTAmount) AS TotalGST,
-        SUM(im.ITAmount) AS TotalIT,
-        SUM(im.TDSGSTAmount + im.TDSITAmount) AS TotalTDS,
-        SUM(im.TotalAmount) AS GrossTotal,
-        SUM(im.NetPayable) AS NetTotal,
+        SUM(im.Amount)            AS TotalAmount,
+        SUM(im.TDSGSTAmount)      AS TotalGST,
+        SUM(im.TDSITAmount)       AS TotalIT,
+        SUM(im.TDS)               AS TotalTDS,
+        SUM(im.TotalAmount)       AS GrossTotal,
+        SUM(im.NetPayable)        AS NetTotal,
 
         MAX(im.ReceivedFromSection) AS ReceivedFromSection,
-        MAX(im.BillTypeId) AS BillTypeId   -- ✅ BillType from invoice
+        MAX(im.BillTypeId)          AS BillTypeId
 
     FROM bill_invoice_map bim
-    JOIN invoice_master im ON im.Id = bim.InvoiceId
+    JOIN invoice_master im 
+        ON im.Id = bim.InvoiceId
     GROUP BY bim.BillInitialId
 ),
 POAgg AS (
@@ -37,8 +38,10 @@ POAgg AS (
         ) AS POTotalGross
 
     FROM bill_invoice_map bim
-    JOIN invoice_master im ON im.Id = bim.InvoiceId
-    JOIN po_master pm ON pm.Id = im.POId
+    JOIN invoice_master im 
+        ON im.Id = bim.InvoiceId
+    JOIN po_master pm 
+        ON pm.Id = im.POId
     GROUP BY bim.BillInitialId
 )
 
@@ -63,21 +66,17 @@ SELECT
     pa.POGSTTotal,
     pa.POITTotal,
     pa.POTotalGross,
-    pa.POTotalGross AS POTotalNet   -- no TDS yet
+    pa.POTotalGross AS POTotalNet
 
 FROM bill_initial_entry bi
 LEFT JOIN bill_entry b 
     ON b.BillInitialId = bi.Id
-
 LEFT JOIN employee_master e 
     ON e.Id = b.AllotedDealingAsst
-
 LEFT JOIN InvoiceAgg ia 
     ON ia.BillInitialId = bi.Id
-
 LEFT JOIN bill_type_master btm 
-    ON btm.Id = ia.BillTypeId   -- ✅ correct join
-
+    ON btm.Id = ia.BillTypeId
 LEFT JOIN POAgg pa 
     ON pa.BillInitialId = bi.Id
 

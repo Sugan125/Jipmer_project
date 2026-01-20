@@ -22,7 +22,7 @@ $stmt = $conn->prepare("
     INNER JOIN bill_initial_entry bi 
         ON bi.Id = be.BillInitialId
     LEFT JOIN bill_process bp 
-        ON bp.BillId = be.Id
+        ON bp.BillId = be.BillInitialId
     LEFT JOIN (
         SELECT 
             bim.BillInitialId,

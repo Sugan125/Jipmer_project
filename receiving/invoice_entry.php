@@ -114,6 +114,19 @@ small { color:green; font-weight: 600 }
         <select name="HOAId" id="hoa" class="form-select" required>
             <option value="">-- Select HOA --</option>
         </select>
+
+         <div id="ecr_info" class="mt-1" style="display:none;">
+        <small class="text-primary">
+            <strong>ECR No:</strong> <span id="ecr_no">-</span>
+            &nbsp; | &nbsp;
+            <strong>ECR Date:</strong> <span id="ecr_date">-</span>
+        </small>
+    </div>
+    </div>
+
+     <div class="col-md-3">
+        <label>ECR Page Number</label>
+        <input type="text" name="Ecrpageno" class="form-control" required>
     </div>
 
     <div class="col-md-3">
@@ -245,7 +258,7 @@ small { color:green; font-weight: 600 }
 <div class="section-title">Invoice Details</div>
 <div class="row g-3">
 <div class="col-md-3"><label>Invoice No</label><input name="InvoiceNo" id="invoice_no" class="form-control" required></div>
-<div class="col-md-3"><label>Invoice Date</label><input type="date" name="InvoiceDate" class="form-control" required></div>
+<div class="col-md-3"><label>Invoice Date</label><input type="date" id="invoice_date" name="InvoiceDate" class="form-control" required></div>
 
 <div class="col-md-3">
 <label>Invoice Amount</label>
@@ -414,6 +427,32 @@ $(document).ready(function(){
     let fy=$('#finYear').val();
     if(fy) loadHOA(fy);
 });
+
+/* ================= HOA CHANGE → SHOW ECR ================= */
+$('#hoa').on('change', function () {
+
+    let hoaId = $(this).val();
+
+    if (!hoaId) {
+        $('#ecr_info').hide();
+        $('#ecr_no').text('-');
+        $('#ecr_date').text('-');
+        return;
+    }
+
+    $.getJSON('get_ecr_by_hoa.php', { HOAId: hoaId }, function (res) {
+
+        if (res && res.EcrNo) {
+            $('#ecr_no').text(res.EcrNo);
+            $('#ecr_date').text(res.EcrDate || '-');
+            $('#ecr_info').slideDown();
+        } else {
+            $('#ecr_info').hide();
+        }
+
+    });
+});
+
 
 /* ================= LOAD PO ================= */
 function loadPO(){
@@ -599,9 +638,46 @@ $('#tds_gst_p').off('blur').on('blur', function () {
         $('#sanction_id').html(opt);
     });
 
+    $.getJSON('get_po_bank_details.php', { POId: poId }, function (bank) {
+
+    $('input[name="PanNumber"]').val(bank.pan_number || '');
+    $('input[name="PFMSNumber"]').val(bank.pfms_number || '');
+    $('input[name="BankName"]').val(bank.bank_name || '');
+    $('input[name="IFSC"]').val(bank.ifsc || '');
+    $('input[name="AccountNumber"]').val(bank.account_number || '');
+
+    });
+
+    let poDateRaw = sel.data('podate');
+    
+    let poDateISO = toISODate(poDateRaw);
+
+    if (poDateISO) {
+        $('#invoice_date')
+            .attr('min', poDateISO)
+            .val('');
+    }
+  
+
+
 });
 
+$('#invoice_date').on('change blur', function () {
+    let invDate = this.value;
+    let poDateRaw = $('#po_id option:selected').data('podate');
+    let poDateISO = poDateRaw ? toISODate(poDateRaw) : null;
 
+    if (poDateISO && invDate && invDate < poDateISO) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Invoice Date',
+            text: 'Invoice Date cannot be earlier than PO Date'
+        }).then(() => {
+            this.value = '';
+            this.focus();
+        });
+    }
+});
 
 /* ================= SANCTION CHANGE MULTI================= */
 // $('#sanction_id').on('change', function () {
@@ -619,6 +695,20 @@ $('#tds_gst_p').off('blur').on('blur', function () {
 
 // On PO change — set requirement
 
+function toISODate(dateStr) {
+    if (!dateStr) return null;
+
+    // Already ISO format YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+    }
+
+    // Handle DD-MM-YYYY or DD/MM/YYYY
+    let parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/');
+    if (parts.length !== 3) return null;
+
+    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+}
 
 
 /* ================= SANCTION CHANGE ================= */

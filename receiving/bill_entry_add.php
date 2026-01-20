@@ -25,6 +25,9 @@ $stmt = $conn->prepare("
 $stmt->execute([$initial_id]);
 $invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$billDate = $init['BillReceivedDate'] ?? date('Y-m-d'); // fallback just in case
+
+
 // Fetch employees
 $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=1 AND RoleId=2 ORDER BY EmployeeName")->fetchAll();
 ?>
@@ -68,72 +71,72 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
     <h5 class="text-secondary mb-3"><i class="fa fa-receipt"></i> Attached Invoices</h5>
     <?php if($invoices): ?>
     <div class="table-responsive">
-        <table class="table table-bordered table-striped invoice-table">
-            <thead class="table-light">
-                <tr>
-                    <th>#</th>
-                    <th>Invoice No</th>
-                    <th>Date</th>
-                    <th>Vendor</th>
-                    <th>Department</th>
-                    <th>Total Amount</th>
-                    <th>GST</th>
-                    <th>IT</th>
-                    <th>TDS</th>
-                    <th>Net Amount</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php foreach($invoices as $i => $inv): 
-                $amount = floatval($inv['TotalAmount'] ?? 0);
-                $gst    = floatval($inv['GSTAmount'] ?? 0);
-                $it     = floatval($inv['ITAmount'] ?? 0);
-                $tds    = floatval($inv['TDS'] ?? 0);
-                $net    = $amount + $gst - $it - $tds;
+    <table class="table table-bordered table-striped invoice-table">
+        <thead class="table-light text-center">
+            <tr>
+                <th>#</th>
+                <th>Invoice No</th>
+                <th>Date</th>
+                <th>Vendor</th>
+                <th>Department</th>
+                <th>Total Amount</th>
+                <th>GST</th>
+                <th>IT</th>
+                <th>TDS</th>
+                <th>Net Amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
 
-                $totalAmount += $amount;
-                $totalGST    += $gst;
-                $totalIT     += $it;
-                $totalTDS    += $tds;
-                $grossTotal  += $amount;
-                $netTotal    += $net;
-            ?>
-                <tr>
-                    <td><?= $i+1 ?></td>
-                    <td><?= htmlspecialchars($inv['InvoiceNo']) ?></td>
-                    <td><?= date('d-m-Y', strtotime($inv['InvoiceDate'])) ?></td>
-                    <td><?= htmlspecialchars($inv['VendorName']) ?></td>
-                    <td><?= htmlspecialchars($inv['DeptName']) ?></td>
-                    <td><?= number_format($amount,2) ?></td>
-                    <td><?= number_format($gst,2) ?></td>
-                    <td><?= number_format($it,2) ?></td>
-                    <td><?= number_format($tds,2) ?></td>
-                    <td><?= number_format($net,2) ?></td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-view" data-id="<?= $inv['Id'] ?>" data-bs-toggle="modal" data-bs-target="#invoiceModal">
-                            <i class="fa fa-eye"></i> View
-                        </button>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <tbody class="text-center">
+        <?php foreach($invoices as $i => $inv): 
+            $amount = floatval($inv['TotalAmount'] ?? 0);
+            $gst    = floatval($inv['TDSGSTAmount'] ?? 0);
+            $it     = floatval($inv['TDSITAmount'] ?? 0);
+            $tds    = floatval($inv['TDS'] ?? 0);
+            $net    = $amount + $gst - $it - $tds;
 
-        <!-- Invoice Totals -->
-        <div class="mt-3 p-3 border bg-light rounded">
-            <h6 class="text-primary"><i class="fa fa-calculator"></i> Invoice Totals</h6>
-            <div class="row text-center">
-                <div class="col-md-2"><strong>Total Amount:</strong><br><?= number_format($totalAmount,2) ?></div>
-                <div class="col-md-2"><strong>Total GST:</strong><br><?= number_format($totalGST,2) ?></div>
-                <div class="col-md-2"><strong>Total IT:</strong><br><?= number_format($totalIT,2) ?></div>
-                <div class="col-md-2"><strong>Total TDS:</strong><br><?= number_format($totalTDS,2) ?></div>
-                <div class="col-md-2"><strong>Gross Total:</strong><br><?= number_format($grossTotal,2) ?></div>
-                <div class="col-md-2"><strong>Net Total:</strong><br><?= number_format($netTotal,2) ?></div>
-            </div>
-        </div>
+            $totalAmount += $amount;
+            $totalGST    += $gst;
+            $totalIT     += $it;
+            $totalTDS    += $tds;
+            $grossTotal  += $amount;
+            $netTotal    += $net;
+        ?>
+            <tr>
+                <td><?= $i+1 ?></td>
+                <td><?= htmlspecialchars($inv['InvoiceNo']) ?></td>
+                <td><?= date('d-m-Y', strtotime($inv['InvoiceDate'])) ?></td>
+                <td><?= htmlspecialchars($inv['VendorName']) ?></td>
+                <td><?= htmlspecialchars($inv['DeptName']) ?></td>
+                <td>₹ <?= number_format($amount,2) ?></td>
+                <td>₹ <?= number_format($gst,2) ?></td>
+                <td>₹ <?= number_format($it,2) ?></td>
+                <td>₹ <?= number_format($tds,2) ?></td>
+                <td>₹ <?= number_format($net,2) ?></td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-view" data-id="<?= $inv['Id'] ?>" data-bs-toggle="modal" data-bs-target="#invoiceModal">
+                        <i class="fa fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
 
-    </div>
+        <tfoot class="table-light text-center fw-bold">
+            <tr>
+                <td colspan="5">Totals</td>
+                <td>₹ <?= number_format($totalAmount,2) ?></td>
+                <td>₹ <?= number_format($totalGST,2) ?></td>
+                <td>₹ <?= number_format($totalIT,2) ?></td>
+                <td>₹ <?= number_format($totalTDS,2) ?></td>
+                <td>₹ <?= number_format($netTotal,2) ?></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
     <?php else: ?>
         <p class="text-muted">No invoices attached.</p>
     <?php endif; ?>
@@ -160,7 +163,14 @@ $emps = $conn->query("SELECT Id, EmployeeName FROM employee_master WHERE Status=
             </div>
             <div class="col-md-6">
                 <label class="form-label"><i class="fa fa-calendar-alt"></i> Allot Date</label>
-                <input type="date" name="allotdate" class="form-control" required>
+               <input 
+    type="date" 
+    name="allotdate" 
+    class="form-control" 
+    required
+    min="<?= date('Y-m-d', strtotime($billDate)) ?>" 
+    value="<?= date('Y-m-d', strtotime($billDate)) ?>" 
+>
             </div>
             <div class="col-12">
                 <label class="form-label"><i class="fa fa-sticky-note"></i> Remarks</label>
@@ -238,6 +248,20 @@ $(document).ready(function(){
             }
         });
     });
+    
+});
+$('input[name="allotdate"]').on('change', function(){
+    const billDate = new Date('<?= $billDate ?>');
+    const today = new Date();
+    const selected = new Date(this.value);
+
+    if(selected < billDate){
+        Swal.fire('Invalid Date', 'Allot Date cannot be before Bill Received Date', 'warning');
+        this.value = '<?= $billDate ?>';
+    } else if(selected > today){
+        Swal.fire('Invalid Date', 'Allot Date cannot be in the future', 'warning');
+        this.value = '<?= $billDate ?>';
+    }
 });
 </script>
 </body>

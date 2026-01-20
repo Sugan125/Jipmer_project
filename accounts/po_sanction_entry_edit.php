@@ -24,6 +24,13 @@ if(!$po){
 $sanStmt = $conn->prepare("SELECT * FROM sanction_order_master WHERE POId = ?");
 $sanStmt->execute([$poId]);
 $sanctions = $sanStmt->fetchAll();
+
+$bankStmt = $conn->prepare("
+    SELECT * FROM po_bank_details
+    WHERE po_id = ? AND is_active = 1
+");
+$bankStmt->execute([$poId]);
+$bank = $bankStmt->fetch(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
@@ -85,7 +92,36 @@ $sanctions = $sanStmt->fetchAll();
     </div>
 </div>
 </div>
+<div class="section-card">
+    <div class="section-title">Bank & Account Details</div>
 
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label>PAN Number</label>
+            <input name="PanNumber" class="form-control" value="<?= $bank['pan_number'] ?>">
+        </div>
+
+        <div class="col-md-3">
+            <label>PFMS Unique Number</label>
+            <input name="PFMSNumber" class="form-control" value="<?= $bank['pfms_number'] ?>">
+        </div>
+
+        <div class="col-md-3">
+            <label>Bank Name</label>
+            <input name="BankName" class="form-control" value="<?= $bank['bank_name'] ?>">
+        </div>
+
+        <div class="col-md-3">
+            <label>IFSC</label>
+            <input name="IFSC" class="form-control" value="<?= $bank['ifsc'] ?>">
+        </div>
+
+        <div class="col-md-3">
+            <label>Account Number</label>
+            <input name="AccountNumber" class="form-control" value="<?= $bank['account_number'] ?>">
+        </div>
+    </div>
+</div>
 <div class="section-card">
 <div class="section-title d-flex justify-content-between">
     <span>Sanction Orders</span>

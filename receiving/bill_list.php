@@ -4,7 +4,7 @@ include '../includes/auth.php';
 
 /* ===== Fetch All Bills with totals and alloted employee ===== */
 $bills = $conn->query("
-   SELECT 
+  SELECT 
     bi.Id,
     bi.BillNumber,
     bi.BillReceivedDate,
@@ -13,37 +13,37 @@ $bills = $conn->query("
     MAX(e.EmployeeName) AS AllotedTo,
     MAX(btm.BillType) AS BillType,
 
-    -- Totals
-    SUM(im.TotalAmount) AS TotalAmount,
-    SUM(im.GSTAmount) AS TotalGST,
-    SUM(im.ITAmount) AS TotalIT,
-    SUM(im.TDS) AS TotalTDS,
-    SUM(
-        im.TotalAmount 
-        + COALESCE(im.GSTAmount,0) 
-        - COALESCE(im.ITAmount,0) 
-        - COALESCE(im.TDS,0)
-    ) AS NetAmount
+    /* -------- Totals from Invoice Master -------- */
+    SUM(im.TotalAmount)        AS TotalAmount,
+    SUM(im.TDSGSTAmount)       AS TotalGST,
+    SUM(im.TDSITAmount)        AS TotalIT,
+    SUM(im.TDS)                AS TotalTDS,
+    SUM(im.NetPayable)         AS NetAmount
 
 FROM bill_initial_entry bi
-LEFT JOIN bill_entry be 
+
+LEFT JOIN bill_entry be
     ON be.BillInitialId = bi.Id
-LEFT JOIN employee_master e 
-    ON be.AllotedDealingAsst = e.Id
-LEFT JOIN bill_invoice_map bim 
+
+LEFT JOIN employee_master e
+    ON e.Id = be.AllotedDealingAsst
+
+LEFT JOIN bill_invoice_map bim
     ON bim.BillInitialId = bi.Id
-LEFT JOIN invoice_master im 
+
+LEFT JOIN invoice_master im
     ON im.Id = bim.InvoiceId
-LEFT JOIN bill_type_master btm 
+
+LEFT JOIN bill_type_master btm
     ON btm.Id = im.BillTypeId
 
-GROUP BY 
+GROUP BY
     bi.Id,
     bi.BillNumber,
     bi.BillReceivedDate,
     bi.Status
 
-ORDER BY MAX(bi.CreatedDate) DESC;
+ORDER BY MAX(bi.CreatedDate) DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

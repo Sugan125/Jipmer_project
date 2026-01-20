@@ -28,6 +28,49 @@ $stmt->execute([
 $_POST['PONumber'],$_POST['PODate'],$a,$gp,$ip,$net,$poId
 ]);
 
+ $check = $conn->prepare("
+    SELECT COUNT(*) 
+    FROM po_bank_details 
+    WHERE po_id = ? AND is_active = 1
+");
+$check->execute([$poId]);
+
+
+if ($check->fetchColumn() > 0) {
+
+    // deactivate old record
+    $conn->prepare("
+        UPDATE po_bank_details 
+        SET is_active = 0 
+        WHERE po_id = ? AND is_active = 1
+    ")->execute([$poId]);
+}
+
+/* insert fresh active bank record */
+$stmtBank = $conn->prepare("
+    INSERT INTO po_bank_details
+    (
+        po_id,
+        pan_number,
+        pfms_number,
+        bank_name,
+        ifsc,
+        account_number,
+        is_active,
+        created_at
+    )
+    VALUES (?,?,?,?,?,?,1,GETDATE())
+");
+
+$stmtBank->execute([
+    $poId,
+    $_POST['PanNumber'] ?? null,
+    $_POST['PFMSNumber'] ?? null,
+    $_POST['BankName'] ?? null,
+    $_POST['IFSC'] ?? null,
+    $_POST['AccountNumber'] ?? null
+]);
+
 /* DELETE OLD SANCTIONS */
 $conn->prepare("DELETE FROM sanction_order_master WHERE POId=?")->execute([$poId]);
 

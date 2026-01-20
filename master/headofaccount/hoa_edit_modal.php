@@ -87,6 +87,15 @@ if (!$hoa) exit("HOA not found");
                    value="<?= $hoa['ObjectHead'] ?>">
         </div>
 
+          <div class="col-md-4">
+                    <label class="form-label">ECR Number</label>
+                    <input type="text" name="ecrno" class="form-control"  value="<?= $hoa['EcrNo'] ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">ECR Date</label>
+                    <input type="date" id="ecr_date" name="InvoiceDate" class="form-control"  value="<?= $hoa['EcrDate'] ?>">
+                </div>
+
         <div class="col-md-12">
             <label class="form-label">Description</label>
             <textarea name="description" class="form-control" rows="3"><?= $hoa['Description'] ?></textarea>

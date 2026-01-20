@@ -132,6 +132,15 @@ require $sidebar;
                     <input type="text" name="object" class="form-control soft-input">
                 </div>
 
+                <div class="col-md-4">
+                    <label class="form-label">ECR Number</label>
+                    <input type="text" name="ecrno" class="form-control soft-input">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">ECR Date</label>
+                    <input type="date" id="ecr_date" name="InvoiceDate" class="form-control" required>
+                </div>
+
                 <div class="col-md-12">
                     <label class="form-label">Description / Purpose</label>
                     <textarea name="description" class="form-control soft-input" rows="3"></textarea>

@@ -56,6 +56,31 @@ try{
 
     $poId = $conn->lastInsertId();
 
+
+    /* ================= SAVE BANK DETAILS ================= */
+    $bankStmt = $conn->prepare("
+        INSERT INTO po_bank_details
+        (
+            po_id,
+            pan_number,
+            pfms_number,
+            bank_name,
+            ifsc,
+            account_number,
+            created_at
+        )
+        VALUES (?,?,?,?,?,?,GETDATE())
+    ");
+
+    $bankStmt->execute([
+        $poId,
+        $_POST['PanNumber'] ?? null,
+        $_POST['PFMSNumber'] ?? null,
+        $_POST['BankName'] ?? null,
+        $_POST['IFSC'] ?? null,
+        $_POST['AccountNumber'] ?? null
+    ]);
+
     /* ================= SAVE SANCTION ORDERS ================= */
     $sanStmt = $conn->prepare("
         INSERT INTO sanction_order_master

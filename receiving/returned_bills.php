@@ -87,17 +87,21 @@ $rows = $conn->query("
         <td><?= htmlspecialchars($r['AllotedDate']) ?></td>
         <td><?= htmlspecialchars($r['Remarks']) ?></td>
         <td><?= htmlspecialchars($r['ReplyText']) ?></td>
-        <td>
-            <?php if ($r['concerned_reply'] == 'Y'): ?>
-                <a href="returned_bill_resubmit.php?id=<?= $r['Id'] ?>" class="btn btn-sm btn-primary">
-                    Resubmit
-                </a>
-            <?php else: ?>
-                <button class="btn btn-sm btn-secondary" disabled>
-                    Awaiting Reply
-                </button>
-            <?php endif; ?>
-        </td>
+       <td>
+<?php if ($r['reviewed'] == 'Y'): ?>
+    <a href="returned_bill_resubmit.php?id=<?= $r['Id'] ?>" class="btn btn-sm btn-primary">
+        Resubmit
+    </a>
+<?php elseif ($r['concerned_reply'] == 'Y'): ?>
+    <a href="returned_bill_preview.php?id=<?= $r['Id'] ?>" class="btn btn-sm btn-warning">
+        Preview & Review
+    </a>
+<?php else: ?>
+    <button class="btn btn-sm btn-secondary" disabled>
+        Awaiting Reply
+    </button>
+<?php endif; ?>
+</td>
     </tr>
     <?php endforeach; ?>
 <?php else: ?>

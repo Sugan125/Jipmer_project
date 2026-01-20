@@ -24,6 +24,15 @@ if(!$po){
     die('Invalid PO');
 }
 
+/* ================= FETCH BANK DETAILS ================= */
+$bankStmt = $conn->prepare("
+    SELECT *
+    FROM po_bank_details
+    WHERE po_id = ? AND is_active = 1
+");
+$bankStmt->execute([$poId]);
+$bank = $bankStmt->fetch(PDO::FETCH_ASSOC);
+
 /* ================= FETCH SANCTIONS ================= */
 $sanStmt = $conn->prepare("
     SELECT *
@@ -116,6 +125,47 @@ $sanctions = $sanStmt->fetchAll();
     <div class="col-md-3">
         <div class="label-title">Created Date</div>
         <div class="value-text"><?= $po['CreatedDate'] ?></div>
+    </div>
+</div>
+</div>
+<!-- ================= BANK / ACCOUNT DETAILS ================= -->
+<div class="section-card">
+<div class="section-title">Bank & Account Details</div>
+
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="label-title">PAN Number</div>
+        <div class="value-text">
+            <?= htmlspecialchars($bank['pan_number'] ?? '-') ?>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="label-title">PFMS Number</div>
+        <div class="value-text">
+            <?= htmlspecialchars($bank['pfms_number'] ?? '-') ?>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="label-title">Bank Name</div>
+        <div class="value-text">
+            <?= htmlspecialchars($bank['bank_name'] ?? '-') ?>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="label-title">IFSC</div>
+        <div class="value-text">
+            <?= htmlspecialchars($bank['ifsc'] ?? '-') ?>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="label-title">Account Number</div>
+        <div class="value-text">
+            <?= htmlspecialchars($bank['account_number'] ?? '-') ?>
+        </div>
     </div>
 </div>
 </div>

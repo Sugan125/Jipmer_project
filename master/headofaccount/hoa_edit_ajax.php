@@ -31,6 +31,8 @@ $subminor   = $_POST['subminor'] ?? '';
 $detail     = $_POST['detail'] ?? '';
 $object     = $_POST['object'] ?? '';
 $desc       = $_POST['description'] ?? '';
+$ecr_date       = trim($_POST['ecr_date'] ?? '');
+$ecrno       = trim($_POST['ecrno'] ?? '');
 
 $full = implode(" - ", array_filter([$major, $submajor, $minor, $subminor, $detail, $object]));
 
@@ -38,12 +40,12 @@ try {
     $stmt = $conn->prepare("
         UPDATE head_of_account_master 
         SET FinancialYear = ?, MajorHead = ?, SubMajorHead = ?, 
-            MinorHead = ?, SubMinorHead = ?, DetailHead = ?, ObjectHead = ?, 
+            MinorHead = ?, SubMinorHead = ?, DetailHead = ?, ObjectHead = ?, EcrNo = ?,EcrDate = ?,
             FullHOA = ?, Description = ?
         WHERE Id = ?
     ");
 
-    $stmt->execute([$fy, $major, $submajor, $minor, $subminor, $detail, $object, $full, $desc, $id]);
+    $stmt->execute([$fy, $major, $submajor, $minor, $subminor, $detail, $object, $ecrno,$ecr_date, $full, $desc, $id]);
 
     echo json_encode(['status'=>'success','message'=>'HOA updated']);
 } catch(Exception $e) {

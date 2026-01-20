@@ -16,6 +16,8 @@ $subminor   = trim($_POST['subminor'] ?? '');
 $detail     = trim($_POST['detail'] ?? '');
 $object     = trim($_POST['object'] ?? '');
 $desc       = trim($_POST['description'] ?? '');
+$ecr_date       = trim($_POST['ecr_date'] ?? '');
+$ecrno       = trim($_POST['ecrno'] ?? '');
 
 if ($fy == '' || $major == '') {
     echo json_encode(['status'=>'error','message'=>'Financial year and Major Head are required']);
@@ -28,12 +30,12 @@ $fullHOA = implode(' - ', array_filter([$major,$submajor,$minor,$subminor,$detai
 try {
     $stmt = $conn->prepare("INSERT INTO head_of_account_master 
         (FinancialYear, MajorHead, SubMajorHead, MinorHead, SubMinorHead, 
-        DetailHead, ObjectHead, FullHOA, Description, CreatedBy)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        DetailHead, ObjectHead,EcrNo,EcrDate, FullHOA, Description, CreatedBy)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     $stmt->execute([
         $fy,$major,$submajor,$minor,$subminor,
-        $detail,$object,$fullHOA,$desc,$_SESSION['user_id']
+        $detail,$object,$ecrno,$ecr_date,$fullHOA,$desc,$_SESSION['user_id']
     ]);
 
     echo json_encode(['status'=>'success','message'=>'HOA added successfully']);
