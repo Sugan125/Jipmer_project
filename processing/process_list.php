@@ -21,27 +21,57 @@ $userId = $_SESSION['user_id'];
 if($_SESSION['role'] == '5'){
    
     $stmt = $conn->prepare("
-    SELECT b.*,bn.BillNumber, Bn.BillReceivedDate, e.EmployeeName AS AllotedName 
+    SELECT 
+        b.*,
+        bn.BillNumber,
+        bn.BillReceivedDate,
+        e.EmployeeName AS AllotedName,
+        im.InvoiceNo,
+        im.InvoiceDate,
+        im.VendorName,
+        im.NetPayable
     FROM bill_entry b
-    left join bill_initial_entry bn on bn.Id = b.BillInitialId
-    LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
-    WHERE b.Status IN ('Pending','Return') 
+    LEFT JOIN bill_initial_entry bn 
+        ON bn.Id = b.BillInitialId
+    LEFT JOIN employee_master e 
+        ON b.AllotedDealingAsst = e.Id
+    LEFT JOIN bill_invoice_map bim 
+        ON bim.BillInitialId = bn.Id
+    LEFT JOIN invoice_master im 
+        ON im.Id = bim.InvoiceId
+    WHERE b.Status IN ('Pending','Return')
     ORDER BY b.CreatedDate DESC
 ");
 $stmt->execute();
+
 
 }
 else{
  
 $stmt = $conn->prepare("
-    SELECT b.*,bn.BillNumber, Bn.BillReceivedDate, e.EmployeeName AS AllotedName 
+    SELECT 
+        b.*,
+        bn.BillNumber,
+        bn.BillReceivedDate,
+        e.EmployeeName AS AllotedName,
+        im.InvoiceNo,
+        im.InvoiceDate,
+        im.VendorName,
+        im.NetPayable
     FROM bill_entry b
-    left join bill_initial_entry bn on bn.Id = b.BillInitialId
-    LEFT JOIN employee_master e ON b.AllotedDealingAsst = e.Id
-    WHERE b.Status IN ('Pending','Return') 
+    LEFT JOIN bill_initial_entry bn 
+        ON bn.Id = b.BillInitialId
+    LEFT JOIN employee_master e 
+        ON b.AllotedDealingAsst = e.Id
+    LEFT JOIN bill_invoice_map bim 
+        ON bim.BillInitialId = bn.Id
+    LEFT JOIN invoice_master im 
+        ON im.Id = bim.InvoiceId
+    WHERE b.Status IN ('Pending','Return')
       AND b.AllotedDealingAsst = :user_id
     ORDER BY b.CreatedDate DESC
 ");
+
 $stmt->execute(['user_id' => $userId]);
 }
 
@@ -76,45 +106,66 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
 
     <div class="table-responsive shadow rounded bg-white p-3">
         <table id="billsTable" class="table table-striped table-bordered table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Bill No</th>
-                    <th>Received</th>
-                    <th>Alloted To</th>
-                    <th>Status</th>
-                    <th>Remarks</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
+           <thead class="table-dark">
+<tr>
+    <th>ID</th>
+    <th>Bill No</th>
+    <th>Received</th>
+    <th>Vendor</th>
+    <th>Invoice No</th>
+    <th>Invoice Date</th>
+    <th class="text-end">Net Amount</th>
+    <th>Alloted To</th>
+    <th>Status</th>
+    <th>Remarks</th>
+    <th>Action</th>
+</tr>
+</thead>
+          <tbody>
 <?php foreach($rows as $r): ?>
-    <tr>
-        <td><?= $r['Id'] ?></td>
-        <td><?= htmlspecialchars($r['BillNumber']) ?></td>
-        <td><?= htmlspecialchars($r['BillReceivedDate']) ?></td>
-        <td><?= htmlspecialchars($r['AllotedName']) ?></td>
+<tr>
+    <td><?= $r['Id'] ?></td>
 
-        <td>
-            <?php if($r['Status'] == 'Pending'): ?>
-                <span class="badge bg-warning text-dark"><?= $r['Status'] ?></span>
-            <?php elseif($r['Status'] == 'Return'): ?>
-                <span class="badge bg-danger text-dark"><?= $r['Status'] ?></span>
-            <?php else: ?>
-                <span class="badge bg-info text-dark"><?= $r['Status'] ?></span>
-            <?php endif; ?>
-        </td>
-        <td><?= htmlspecialchars($r['Remarks']) ?></td>
-        <td>
-            <button 
-                class="btn btn-sm btn-primary process-btn"
-                data-id="<?= $r['BillInitialId'] ?>"
-                <?= ($r['Status'] == 'Return') ? 'disabled' : '' ?>
-            >
-                <i class="fas fa-play-circle"></i> Process
-            </button>
-        </td>
-    </tr>
+    <td class="fw-semibold">
+        <?= htmlspecialchars($r['BillNumber']) ?>
+    </td>
+
+    <td><?= htmlspecialchars($r['BillReceivedDate']) ?></td>
+
+    <td><?= htmlspecialchars($r['VendorName'] ?? '-') ?></td>
+
+    <td><?= htmlspecialchars($r['InvoiceNo'] ?? '-') ?></td>
+
+    <td><?= $r['InvoiceDate'] ?: '-' ?></td>
+
+    <td class="text-end fw-bold text-success">
+        <?= number_format($r['NetPayable'] ?? 0, 2) ?>
+    </td>
+
+    <td><?= htmlspecialchars($r['AllotedName']) ?></td>
+
+    <td>
+        <?php if($r['Status'] == 'Pending'): ?>
+            <span class="badge bg-warning text-dark">Pending</span>
+        <?php elseif($r['Status'] == 'Return'): ?>
+            <span class="badge bg-danger">Return</span>
+        <?php else: ?>
+            <span class="badge bg-info"><?= $r['Status'] ?></span>
+        <?php endif; ?>
+    </td>
+
+    <td><?= htmlspecialchars($r['Remarks']) ?></td>
+
+    <td>
+        <button 
+            class="btn btn-sm btn-primary process-btn"
+            data-id="<?= $r['BillInitialId'] ?>"
+            <?= ($r['Status'] == 'Return') ? 'disabled' : '' ?>
+        >
+            <i class="fas fa-play-circle"></i> Process
+        </button>
+    </td>
+</tr>
 <?php endforeach; ?>
 </tbody>
 
@@ -139,7 +190,7 @@ $(document).ready(function() {
         "pageLength": 10,
         "ordering": true,
         "columnDefs": [
-            { "orderable": false, "targets": 5 } // Disable sorting on Action column
+            { "orderable": false, "targets": 10 } // Disable sorting on Action column
         ]
     });
 

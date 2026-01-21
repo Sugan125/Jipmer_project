@@ -94,38 +94,59 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
     <div class="card p-4 mb-4">
         <h5 class="text-secondary mb-3"><i class="fas fa-receipt"></i> Attached Invoices</h5>
         <?php if($invoices): ?>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped invoice-table">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>Invoice No</th>
-                        <th>Date</th>
-                        <th>Vendor</th>
-                        <th>Department</th>
-                        <th>Total Amount</th>
-                        <th>View</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach($invoices as $i => $inv): ?>
-                    <tr>
-                        <td><?= $i+1 ?></td>
-                        <td><?= htmlspecialchars($inv['InvoiceNo']) ?></td>
-                        <td><?= date('d-m-Y', strtotime($inv['InvoiceDate'])) ?></td>
-                        <td><?= htmlspecialchars($inv['VendorName']) ?></td>
-                        <td><?= htmlspecialchars($inv['DeptName']) ?></td>
-                        <td><?= number_format($inv['TotalAmount'],2) ?></td>
-                          <td>
-                        <button class="btn btn-info btn-sm viewInvoices" data-id="<?= $inv['billId'] ?>">
-                            <i class="fa fa-eye"></i> View
-                        </button>
-                    </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+       <div class="table-responsive">
+<table class="table table-bordered table-striped invoice-table">
+    <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>Invoice No</th>
+            <th>Invoice Date</th>
+            <th>Vendor</th>
+            <th>Department</th>
+            <th>Invoice Amount</th>
+            <th>GST</th>
+            <th>TDS</th>
+            <th>Net Payable</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach($invoices as $i => $inv): ?>
+        <tr>
+            <td><?= $i + 1 ?></td>
+            <td><?= htmlspecialchars($inv['InvoiceNo']) ?></td>
+            <td><?= date('d-m-Y', strtotime($inv['InvoiceDate'])) ?></td>
+            <td><?= htmlspecialchars($inv['VendorName']) ?></td>
+            <td><?= htmlspecialchars($inv['DeptName']) ?></td>
+
+            <td class="text-end fw-bold">
+                <?= number_format($inv['TotalAmount'], 2) ?>
+            </td>
+
+            <td class="text-end text-primary">
+                <?= number_format($inv['GSTAmount'] ?? 0, 2) ?>
+            </td>
+
+            <td class="text-end text-danger">
+                <?= number_format($inv['TDS'] ?? 0, 2) ?>
+            </td>
+
+            <td class="text-end text-success fw-bold">
+                <?= number_format($inv['NetPayable'], 2) ?>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+
+    <tfoot class="table-light">
+        <tr>
+            <td colspan="8" class="text-end fw-bold">Total Net Payable</td>
+            <td class="text-end fw-bold text-success">
+                <?= number_format(array_sum(array_column($invoices,'NetPayable')),2) ?>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+</div>
         <?php else: ?>
             <p class="text-muted">No invoices attached.</p>
         <?php endif; ?>
