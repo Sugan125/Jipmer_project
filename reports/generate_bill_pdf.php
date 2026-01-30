@@ -1,4 +1,8 @@
 <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 require_once('../tcpdf/tcpdf.php');
 include '../config/db.php';
 
@@ -86,17 +90,25 @@ SELECT
     im.VendorName,
     im.InvoiceNo,
     im.InvoiceDate,
-    im.Amount AS Gross,
-    COALESCE(im.GSTAmount,0) AS GSTAmount,
-    COALESCE(im.ITAmount,0) AS ITAmount,
-    COALESCE(im.TDS,0) AS TDS,
-    im.TotalAmount AS Net,
+
+    -- Gross = invoice amount
+    COALESCE(im.Amount,0) AS Gross,
+
+    -- Deductions
+    COALESCE(im.TDSGSTAmount,0) AS TDSGSTAmount,
+    COALESCE(im.TDSITAmount,0)  AS TDSITAmount,
+    (COALESCE(im.TDSGSTAmount,0) + COALESCE(im.TDSITAmount,0)) AS TotalTDS,
+
+    -- Amount after deductions
+    COALESCE(im.NetPayable,0) AS Net,
 
     im.BankName,
     im.AccountNumber,
     im.IFSC,
     im.PanNumber,
-   dm.DeptName,
+
+    dm.DeptName,
+
     ho.DetailsHeadCode,
     ho.DetailsHeadName,
     ho.ObjectHeadCode,
@@ -104,9 +116,12 @@ SELECT
 
 FROM bill_invoice_map bim
 JOIN invoice_master im ON im.Id = bim.InvoiceId
-LEFT JOIN hoa_master ho ON ho.HOAId = im.HOAId
+
+LEFT JOIN hoa_master ho ON ho.HoaId = im.HOAId   -- IMPORTANT (HoaId)
 LEFT JOIN dept_master dm ON dm.Id = im.DeptId
+
 WHERE bim.BillInitialId = :billId
+ORDER BY im.InvoiceDate ASC
 ");
 $stmt->execute(['billId' => $billId]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -271,7 +286,11 @@ $table = '
 ';
 
 $no = 1;
-$totalGross = $totalTDS = $totalGST = $totalIT = $totalNet = 0;
+$totalGross = 0;
+$totalTDSGST = 0;
+$totalTDSIT = 0;
+$totalNet = 0;
+
 
 foreach ($rows as $r) {
 
@@ -293,16 +312,17 @@ foreach ($rows as $r) {
             PAN: '.$r['PanNumber'].'
         </td>
 
-        <td align="right">'.number_format($r['Gross'],2).'</td>
-        <td align="right">'.number_format($r['TDS'],2).'</td>
-        <td align="right">'.number_format($r['ITAmount'],2).'</td>
-        <td align="right">'.number_format($r['Net'],2).'</td>
-    </tr>';
+       <td align="right">'.number_format($r['Gross'],2).'</td>
+<td align="right">'.number_format($r['TDSGSTAmount'],2).'</td>
+<td align="right">'.number_format($r['TDSITAmount'],2).'</td>
+<td align="right">'.number_format($r['Net'],2).'</td>
 
-    $totalGross += $r['Gross'];
-    $totalTDS   += $r['TDS'];
-    $totalIT    += $r['ITAmount'];
-    $totalNet   += $r['Net'];
+    </tr>';
+$totalGross  += (float)$r['Gross'];
+$totalTDSGST += (float)$r['TDSGSTAmount'];
+$totalTDSIT  += (float)$r['TDSITAmount'];
+$totalNet    += (float)$r['Net'];
+
 
     $no++;
 }
@@ -327,9 +347,9 @@ $table .= '
 <tr style="font-weight:bold;">
     <td colspan="3" align="right">TOTAL</td>
     <td align="right">'.number_format($totalGross,2).'</td>
-    <td align="right">'.number_format($totalTDS,2).'</td>
-    <td align="right">'.number_format($totalIT,2).'</td>
-    <td align="right">'.number_format($totalNet,2).'</td>
+   <td align="right">'.number_format($totalTDSGST,2).'</td>
+<td align="right">'.number_format($totalTDSIT,2).'</td>
+<td align="right">'.number_format($totalNet,2).'</td>
 </tr>';
 
 /* ===== AMOUNT IN WORDS ===== */

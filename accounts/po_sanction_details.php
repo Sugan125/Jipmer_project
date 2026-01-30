@@ -5,233 +5,157 @@ error_reporting(E_ALL);
 include '../config/db.php';
 include '../includes/auth.php';
 
-if(!isset($_GET['po_id'])){
-    die('PO ID Missing');
-}
+$poId = (int)($_SESSION['po_context_id'] ?? 0);
+if($poId <= 0) die('PO ID Missing in session. Go back to list.');
 
-$poId = (int)$_GET['po_id'];
-
-/* ================= FETCH PO ================= */
-$poStmt = $conn->prepare("
-    SELECT *
-    FROM po_master
-    WHERE Id = ?
-");
+/* PO */
+$poStmt = $conn->prepare("SELECT * FROM po_master WHERE Id = ?");
 $poStmt->execute([$poId]);
-$po = $poStmt->fetch();
+$po = $poStmt->fetch(PDO::FETCH_ASSOC);
+if(!$po) die('Invalid PO');
 
-if(!$po){
-    die('Invalid PO');
-}
-
-/* ================= FETCH BANK DETAILS ================= */
-$bankStmt = $conn->prepare("
-    SELECT *
-    FROM po_bank_details
-    WHERE po_id = ? AND is_active = 1
-");
+/* BANK */
+$bankStmt = $conn->prepare("SELECT TOP 1 * FROM po_bank_details WHERE po_id = ? ORDER BY Id DESC");
 $bankStmt->execute([$poId]);
 $bank = $bankStmt->fetch(PDO::FETCH_ASSOC);
 
-/* ================= FETCH SANCTIONS ================= */
-$sanStmt = $conn->prepare("
-    SELECT *
-    FROM sanction_order_master
-    WHERE POId = ?
-    ORDER BY SanctionDate
-");
+/* ITEMS */
+$itemStmt = $conn->prepare("SELECT * FROM po_items WHERE POId = ? ORDER BY Id ASC");
+$itemStmt->execute([$poId]);
+$items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+
+/* SANCTIONS */
+$sanStmt = $conn->prepare("SELECT * FROM sanction_order_master WHERE POId = ? ORDER BY Id ASC");
 $sanStmt->execute([$poId]);
-$sanctions = $sanStmt->fetchAll();
+$sanctions = $sanStmt->fetchAll(PDO::FETCH_ASSOC);
+
+/* totals */
+$totalGST = 0; $totalIT = 0; $totalSan = 0;
+foreach($items as $it){ $totalGST += (float)$it['GSTAmount']; $totalIT += (float)$it['ITAmount']; }
+foreach($sanctions as $s){ $totalSan += (float)$s['SanctionAmount']; }
+$balance = ((float)$po['PONetAmount']) - $totalSan;
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-<title>PO & Sanction Details</title>
+<title>PO Details</title>
 <link rel="stylesheet" href="../css/bootstrap.min.css">
 <link rel="stylesheet" href="../css/all.min.css">
 <link rel="stylesheet" href="../css/style.css">
 <style>
 .page-content{margin-left:240px;padding:50px 30px;}
 .card{max-width:1100px;margin:auto;}
-.section-card{
-    border:1px solid #dee2e6;
-    border-radius:8px;
-    padding:20px;
-    margin-bottom:25px;
-    background:#f9f9f9;
-}
-.section-title{
-    font-weight:600;
-    color:#0d6efd;
-    margin-bottom:15px;
-}
-.label-title{
-    font-size:13px;
-    color:#6c757d;
-}
-.value-text{
-    font-weight:600;
-}
-.table th,.table td{
-    vertical-align:middle;
-}
+.section-card{border:1px solid #dee2e6;border-radius:8px;padding:20px;margin-bottom:25px;background:#f9f9f9;}
+.section-title{font-weight:600;color:#0d6efd;margin-bottom:15px;}
+.table td,.table th{vertical-align:middle;}
 </style>
 </head>
-
 <body class="bg-light">
-
 <?php include '../layout/topbar.php'; ?>
 <?php include '../layout/sidebar.php'; ?>
 
 <div class="page-content">
 <div class="card p-4 shadow">
 
-<h4 class="text-primary mb-4">
-<i class="fa fa-eye"></i> PO & Sanction Order Details
-</h4>
-
-<!-- ================= PO DETAILS ================= -->
-<div class="section-card">
-<div class="section-title">Purchase Order Details</div>
-
-<div class="row g-3">
-    <div class="col-md-3">
-        <div class="label-title">PO Number</div>
-        <div class="value-text"><?= htmlspecialchars($po['POOrderNo']) ?></div>
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="text-primary mb-0"><i class="fa fa-eye"></i> PO Full Details</h4>
+    <div>
+      <button class="btn btn-primary" onclick="window.location.href='po_sanction_entry_edit.php'">
+        <i class="fa fa-edit"></i> Edit
+      </button>
+      <a href="po_sanction_list.php" class="btn btn-secondary">Back</a>
     </div>
-    <div class="col-md-3">
-        <div class="label-title">PO Date</div>
-        <div class="value-text"><?= htmlspecialchars($po['POOrderDate']) ?></div>
-    </div>
-    <div class="col-md-3">
-        <div class="label-title">PO Amount</div>
-        <div class="value-text text-end"><?= number_format($po['POAmount'],2) ?></div>
-    </div>
-    <div class="col-md-3">
-        <div class="label-title">PO Net Amount</div>
-        <div class="value-text text-success text-end">
-            <?= number_format($po['PONetAmount'],2) ?>
-        </div>
-    </div>
+  </div>
 
-    <div class="col-md-3">
-        <div class="label-title">GST %</div>
-        <div class="value-text"><?= $po['POGSTPercent'] ?> %</div>
+  <div class="section-card">
+    <div class="section-title">PO Summary</div>
+    <div class="row g-3">
+      <div class="col-md-3"><b>PO No:</b> <?= htmlspecialchars($po['POOrderNo']) ?></div>
+      <div class="col-md-3"><b>PO Date:</b> <?= htmlspecialchars(substr($po['POOrderDate'],0,10)) ?></div>
+      <div class="col-md-3"><b>GST No:</b> <?= htmlspecialchars($po['GSTNumber'] ?? '-') ?></div>
+      <div class="col-md-3"><b>Created:</b> <?= htmlspecialchars($po['CreatedDate'] ?? '-') ?></div>
+
+      <div class="col-md-3"><b>Base:</b> <?= number_format((float)$po['POAmount'],2) ?></div>
+      <div class="col-md-3"><b>GST:</b> <?= number_format($totalGST,2) ?></div>
+      <div class="col-md-3"><b>IT:</b> <?= number_format($totalIT,2) ?></div>
+      <div class="col-md-3 text-success"><b>Net:</b> <?= number_format((float)$po['PONetAmount'],2) ?></div>
+
+      <div class="col-md-3"><b>Sanction Total:</b> <?= number_format($totalSan,2) ?></div>
+      <div class="col-md-3 <?= ($balance < 0 ? 'text-danger' : 'text-primary') ?>">
+        <b>Balance (Net):</b> <?= number_format($balance,2) ?>
+      </div>
     </div>
-    <div class="col-md-3">
-        <div class="label-title">IT %</div>
-        <div class="value-text"><?= $po['POITPercent'] ?> %</div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title">Bank Details</div>
+    <div class="row g-3">
+      <div class="col-md-3"><b>PAN:</b> <?= htmlspecialchars($bank['pan_number'] ?? '-') ?></div>
+      <div class="col-md-3"><b>PFMS:</b> <?= htmlspecialchars($bank['pfms_number'] ?? '-') ?></div>
+      <div class="col-md-3"><b>Bank:</b> <?= htmlspecialchars($bank['bank_name'] ?? '-') ?></div>
+      <div class="col-md-3"><b>IFSC:</b> <?= htmlspecialchars($bank['ifsc'] ?? '-') ?></div>
+      <div class="col-md-3"><b>Acc No:</b> <?= htmlspecialchars($bank['account_number'] ?? '-') ?></div>
     </div>
-    <div class="col-md-3">
-        <div class="label-title">Created Date</div>
-        <div class="value-text"><?= $po['CreatedDate'] ?></div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-title">PO Items</div>
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>#</th><th>Item</th><th class="text-end">Amount</th>
+            <th class="text-end">GST%</th><th class="text-end">GST Amt</th>
+            <th class="text-end">IT%</th><th class="text-end">IT Amt</th>
+            <th class="text-end">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php $i=1; foreach($items as $it): ?>
+          <tr>
+            <td><?= $i++ ?></td>
+            <td><?= htmlspecialchars($it['ItemName']) ?></td>
+            <td class="text-end"><?= number_format((float)$it['ItemAmount'],2) ?></td>
+            <td class="text-end"><?= number_format((float)$it['GSTPercent'],2) ?></td>
+            <td class="text-end"><?= number_format((float)$it['GSTAmount'],2) ?></td>
+            <td class="text-end"><?= number_format((float)$it['ITPercent'],2) ?></td>
+            <td class="text-end"><?= number_format((float)$it['ITAmount'],2) ?></td>
+            <td class="text-end fw-bold"><?= number_format((float)$it['NetAmount'],2) ?></td>
+          </tr>
+        <?php endforeach; ?>
+        <?php if(empty($items)): ?>
+          <tr><td colspan="8" class="text-center text-muted">No items</td></tr>
+        <?php endif; ?>
+        </tbody>
+      </table>
     </div>
-</div>
-</div>
-<!-- ================= BANK / ACCOUNT DETAILS ================= -->
-<div class="section-card">
-<div class="section-title">Bank & Account Details</div>
+  </div>
 
-<div class="row g-3">
-    <div class="col-md-3">
-        <div class="label-title">PAN Number</div>
-        <div class="value-text">
-            <?= htmlspecialchars($bank['pan_number'] ?? '-') ?>
-        </div>
+  <div class="section-card">
+    <div class="section-title">Sanction Orders</div>
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>#</th><th>Sanction No</th><th>Date</th><th class="text-end">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php $j=1; foreach($sanctions as $s): ?>
+          <tr>
+            <td><?= $j++ ?></td>
+            <td><?= htmlspecialchars($s['SanctionOrderNo']) ?></td>
+            <td><?= htmlspecialchars(substr($s['SanctionDate'],0,10)) ?></td>
+            <td class="text-end"><?= number_format((float)$s['SanctionAmount'],2) ?></td>
+          </tr>
+        <?php endforeach; ?>
+        <?php if(empty($sanctions)): ?>
+          <tr><td colspan="4" class="text-center text-muted">No sanctions</td></tr>
+        <?php endif; ?>
+        </tbody>
+      </table>
     </div>
-
-    <div class="col-md-3">
-        <div class="label-title">PFMS Number</div>
-        <div class="value-text">
-            <?= htmlspecialchars($bank['pfms_number'] ?? '-') ?>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="label-title">Bank Name</div>
-        <div class="value-text">
-            <?= htmlspecialchars($bank['bank_name'] ?? '-') ?>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="label-title">IFSC</div>
-        <div class="value-text">
-            <?= htmlspecialchars($bank['ifsc'] ?? '-') ?>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="label-title">Account Number</div>
-        <div class="value-text">
-            <?= htmlspecialchars($bank['account_number'] ?? '-') ?>
-        </div>
-    </div>
-</div>
-</div>
-
-<!-- ================= SANCTION DETAILS ================= -->
-<div class="section-card">
-<div class="section-title">Sanction Order Details</div>
-
-<div class="table-responsive">
-<table class="table table-bordered table-striped">
-<thead class="table-light">
-<tr>
-    <th>#</th>
-    <th>Sanction No</th>
-    <th>Date</th>
-    <th class="text-end">Amount</th>
-    <th class="text-end">GST</th>
-    <th class="text-end">IT</th>
-    <th class="text-end">Net Amount</th>
-</tr>
-</thead>
-<tbody>
-<?php
-$totalAmt = $totalGst = $totalIt = $totalNet = 0;
-$i = 1;
-foreach($sanctions as $s):
-    $totalAmt += $s['SanctionAmount'];
-    $totalGst += $s['GSTAmount'];
-    $totalIt  += $s['ITAmount'];
-    $totalNet += $s['SanctionNetAmount'];
-?>
-<tr>
-    <td><?= $i++ ?></td>
-    <td><?= htmlspecialchars($s['SanctionOrderNo']) ?></td>
-    <td><?= htmlspecialchars($s['SanctionDate']) ?></td>
-    <td class="text-end"><?= number_format($s['SanctionAmount'],2) ?></td>
-    <td class="text-end"><?= number_format($s['GSTAmount'],2) ?></td>
-    <td class="text-end"><?= number_format($s['ITAmount'],2) ?></td>
-    <td class="text-end fw-bold text-success">
-        <?= number_format($s['SanctionNetAmount'],2) ?>
-    </td>
-</tr>
-<?php endforeach; ?>
-</tbody>
-
-<tfoot class="table-light fw-bold">
-<tr>
-    <td colspan="3" class="text-end">TOTAL</td>
-    <td class="text-end"><?= number_format($totalAmt,2) ?></td>
-    <td class="text-end"><?= number_format($totalGst,2) ?></td>
-    <td class="text-end"><?= number_format($totalIt,2) ?></td>
-    <td class="text-end text-success"><?= number_format($totalNet,2) ?></td>
-</tr>
-</tfoot>
-</table>
-</div>
-</div>
-
-<div class="text-end">
-<a href="po_sanction_list.php" class="btn btn-secondary">
-<i class="fa fa-arrow-left"></i> Back
-</a>
-<a href="po_sanction_entry_edit.php?po_id=<?= $poId ?>" class="btn btn-primary">
-<i class="fa fa-edit"></i> Edit
-</a>
-</div>
+  </div>
 
 </div>
 </div>

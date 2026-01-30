@@ -162,47 +162,31 @@ small { color:green; font-weight: 600 }
 
         <!-- PO Details Card -->
         <div id="po_details_box" class="col-12 po-details mt-3">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="po-item">
-                        <span class="po-label">PO Number</span>
-                        <span id="po_no" class="po-value"></span>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="po-item">
-                        <span class="po-label">PO Date</span>
-                        <span id="po_date" class="po-value"></span>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="po-item">
-                        <span class="po-label">PO Amount</span>
-                        <span id="po_amount" class="po-value text-primary fw-bold"></span>
-                    </div>
-                </div>
-            </div>
+            <div class="mt-3">
+  <div class="fw-bold text-primary mb-2">
+    <i class="fa fa-list"></i> PO Items
+  </div>
 
-            <div class="row g-3 mt-2">
-                <div class="col-md-4">
-                    <div class="po-item">
-                        <span class="po-label">PO GST %</span>
-                        <span id="po_gst" class="po-value"></span>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="po-item">
-                        <span class="po-label">PO IT %</span>
-                        <span id="po_it" class="po-value"></span>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="po-item">
-                        <span class="po-label">PO Net Amount</span>
-                        <span id="po_net" class="po-value text-success fw-bold"></span>
-                    </div>
-                </div>
-            </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-sm bg-white" id="po_items_table">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Item Name</th>
+          <th class="text-end">Amount</th>
+          <th class="text-end">GST%</th>
+          <th class="text-end">GST</th>
+          <th class="text-end">IT%</th>
+          <th class="text-end">IT</th>
+          <th class="text-end">Net</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="8" class="text-center text-muted">Select PO to view items</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
         </div>
 
         <!-- Sanction Selection -->
@@ -223,8 +207,6 @@ small { color:green; font-weight: 600 }
                         <th>Sanction Amount</th>
 <th>Used Amount</th>
 <th>Balance Amount</th>
-<th>GST %</th>
-<th>IT %</th>
 <th>Net Amount</th>
                     </tr>
                 </thead>
@@ -460,6 +442,11 @@ function loadPO(){
         let opt = '<option value="">-- Select PO --</option>';
 
         $.each(res, function(i, row){
+
+            let poDate = row.POOrderDate || '-';
+            let base = parseFloat(row.POAmount || 0).toFixed(2);
+            let net  = parseFloat(row.PONetAmount || 0).toFixed(2);
+
             opt += `
                 <option 
                     value="${row.Id}"
@@ -470,13 +457,14 @@ function loadPO(){
                     data-poit="${row.POITPercent}"
                     data-ponet="${row.PONetAmount}"
                 >
-                    ${row.POOrderNo}
+                    ${row.POOrderNo} | ${poDate} | Net ₹${net}
                 </option>`;
         });
 
         $('#po_id').html(opt);
     });
 }
+
 $(document).ready(loadPO);
 
 /* ================= AMOUNT ENTRY================= */
@@ -501,7 +489,52 @@ $('#po_id').change(function () {
         $('#po_details_box').slideUp();
         return;
     }
+$('#po_details_box').slideDown();
 
+    // ✅ ADD THIS HERE (PO Items load)
+    $.getJSON('get_po_items.php', { POId: poId }, function(items){
+        let rows = '';
+        if(!items || items.length === 0){
+            rows = `<tr><td colspan="8" class="text-center text-muted">No items found</td></tr>`;
+        }else{
+            let i = 1;
+            let tAmt=0,tG=0,tI=0,tN=0;
+
+            items.forEach(function(it){
+                tAmt += parseFloat(it.ItemAmount || 0);
+                tG   += parseFloat(it.GSTAmount || 0);
+                tI   += parseFloat(it.ITAmount || 0);
+                tN   += parseFloat(it.NetAmount || 0);
+
+                rows += `
+                  <tr>
+                    <td>${i++}</td>
+                    <td>${it.ItemName || ''}</td>
+                    <td class="text-end">₹ ${parseFloat(it.ItemAmount||0).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(it.GSTPercent||0).toFixed(2)}%</td>
+                    <td class="text-end">₹ ${parseFloat(it.GSTAmount||0).toFixed(2)}</td>
+                    <td class="text-end">${parseFloat(it.ITPercent||0).toFixed(2)}%</td>
+                    <td class="text-end">₹ ${parseFloat(it.ITAmount||0).toFixed(2)}</td>
+                    <td class="text-end fw-bold">₹ ${parseFloat(it.NetAmount||0).toFixed(2)}</td>
+                  </tr>
+                `;
+            });
+
+            rows += `
+              <tr class="table-secondary fw-bold">
+                <td colspan="2" class="text-end">TOTAL</td>
+                <td class="text-end">₹ ${tAmt.toFixed(2)}</td>
+                <td></td>
+                <td class="text-end">₹ ${tG.toFixed(2)}</td>
+                <td></td>
+                <td class="text-end">₹ ${tI.toFixed(2)}</td>
+                <td class="text-end">₹ ${tN.toFixed(2)}</td>
+              </tr>
+            `;
+        }
+
+        $('#po_items_table tbody').html(rows);
+    });
     // Selected PO
     let sel = $('#po_id option:selected');
     let poAmount = parseFloat(sel.data('poamount')) || 0;
@@ -530,32 +563,45 @@ $('#po_id').change(function () {
 
     // Validate dynamically
     
-$('#tds_gst_p').off('blur').on('blur', function () {
-    let tdsVal = parseFloat(this.value) || 0;
-    let poGST = parseFloat($('#po_id option:selected').data('pogst')) || 0;
-    let inputField = this;
+$('#tds_gst_p')
+  .off('blur input')
+  .on('blur', function () {
 
-    // Only show alert if PO GST > 0 and TDS GST <= 0
-    if (poGST > 0 && tdsVal <= 0 && !tdsGstAlertShown) {
-        tdsGstAlertShown = true; // lock alert
+    let tdsVal = parseFloat(this.value);
+    let poGST  = parseFloat($('#po_id option:selected').data('pogst')) || 0;
 
-        $(this).addClass('border-danger');
+    // empty or NaN treated as 0
+    if (isNaN(tdsVal)) tdsVal = 0;
 
-        Swal.fire({
-            icon: 'warning',
-            title: 'Invalid TDS GST',
-            text: 'Since PO GST is greater than 0%, TDS GST cannot be 0'
-        }).then(() => {
-            inputField.value = '';
-            setTimeout(() => inputField.focus(), 100); // refocus safely
-            tdsGstAlertShown = false; // unlock alert
-        });
-    } else if (tdsVal > 0) {
-        $(this).removeClass('border-danger');
+    if (poGST > 0 && tdsVal <= 0) {
+
+        if (!tdsGstAlertShown) {
+            tdsGstAlertShown = true;
+
+            $(this).addClass('border-danger');
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Invalid TDS GST',
+                text: 'Since PO GST is greater than 0%, TDS GST cannot be 0'
+            });
+        }
+
+        // DO NOT focus here
+        return;
     }
 
+    // valid case
+    $(this).removeClass('border-danger');
+    tdsGstAlertShown = false;
+
     calcInvoice();
-});
+  })
+
+  // 🔁 Reset alert lock when user types
+  .on('input', function () {
+      tdsGstAlertShown = false;
+  });
     /* ---------- TDS IT Setup ---------- */
     $('#tds_it_p').prop('required', false).removeClass('border-danger');
 
@@ -745,8 +791,6 @@ $('#sanction_id').on('change', function () {
                 <td>₹ ${sanctionAmt.toFixed(2)}</td>
                 <td class="text-danger">₹ ${usedAmt.toFixed(2)}</td>
                 <td class="text-success">₹ ${balanceAmt.toFixed(2)}</td>
-                <td>${gst.toFixed(2)} %</td>
-                <td>${it.toFixed(2)} %</td>
                 <td>₹ ${net.toFixed(2)}</td>
             </tr>
         `;
@@ -770,8 +814,6 @@ $('#sanction_id').on('change', function () {
             <td>₹ ${totalSanction.toFixed(2)}</td>
             <td class="text-danger">₹ ${totalUsed.toFixed(2)}</td>
             <td class="text-success">₹ ${totalBalance.toFixed(2)}</td>
-            <td></td>
-            <td></td>
             <td>₹ ${totalNet.toFixed(2)}</td>
         </tr>
     `;

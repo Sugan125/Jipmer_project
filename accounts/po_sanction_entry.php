@@ -18,7 +18,6 @@ include '../includes/auth.php';
 .card{max-width:1100px;margin:auto;}
 .section-card{border:1px solid #dee2e6;border-radius:8px;padding:20px;margin-bottom:25px;background:#f9f9f9;}
 .section-title{font-weight:600;color:#0d6efd;margin-bottom:15px;}
-small{color:#198754;font-weight:600;}
 .table td,.table th{vertical-align:middle;}
 .balance{font-weight:700;color:#dc3545;}
 </style>
@@ -40,119 +39,150 @@ small{color:#198754;font-weight:600;}
 
 <!-- ================= PO DETAILS ================= -->
 <div class="section-card">
-<div class="section-title">Purchase Order (PO) Details</div>
+  <div class="section-title">Purchase Order (PO) Details</div>
 
-<div class="row g-3">
-    <div class="col-md-3">
-        <label>PO Number</label>
-        <input type="text" name="PONumber" class="form-control" required>
-    </div>
+  <div class="row g-3">
+      <div class="col-md-3">
+          <label>PO Number</label>
+          <input type="text" name="PONumber" class="form-control" required>
+      </div>
 
-    <div class="col-md-3">
-        <label>PO Date</label>
-        <input type="date" name="PODate" class="form-control" required>
-    </div>
+      <div class="col-md-3">
+          <label>PO Date</label>
+          <input type="date" name="PODate" class="form-control" required>
+      </div>
 
-    <div class="col-md-3">
-        <label>GST Number</label>
-        <input type="text" name="GSTNumber" class="form-control" required>
-    </div>
+      <div class="col-md-3">
+          <label>GST Number</label>
+          <input type="text" name="GSTNumber" class="form-control" required>
+      </div>
 
-    <div class="col-md-3">
-        <label>PO Amount</label>
-        <input type="number" step="0.01" id="po_amount" name="POAmount" class="form-control" required>
-    </div>
+      <div class="col-md-3">
+          <label>PO Total Amount</label>
+          <input readonly id="po_amount" name="POAmount" class="form-control bg-light fw-bold" value="0.00">
+          <small class="text-muted">Calculated from items</small>
+      </div>
 
-    <div class="col-md-3">
-        <label>PO GST %</label>
-        <input type="number" step="0.01" max="100" id="po_gst_p" name="POGSTPercent" class="form-control">
-        <small id="po_gst_amt"></small>
-    </div>
+      <div class="col-md-3">
+          <label>PO Net Total</label>
+          <input readonly id="po_net_total" class="form-control bg-light fw-bold" value="0.00">
+      </div>
 
-    <div class="col-md-3">
-        <label>PO IT %</label>
-        <input type="number" step="0.01" max="100" id="po_it_p" name="POITPercent" class="form-control">
-        <small id="po_it_amt"></small>
-    </div>
-
-    <div class="col-md-3">
-        <label>PO Net Total</label>
-        <input readonly id="po_net_total" class="form-control bg-light fw-bold">
-    </div>
-
-    <div class="col-md-3">
-        <label>Remaining Balance</label>
-        <input readonly id="remaining_balance" class="form-control bg-light balance">
-    </div>
+      <div class="col-md-3">
+        
+      </div>
+  </div>
 </div>
-</div>
+
+<!-- ================= PO ITEMS ================= -->
 <div class="section-card">
-    <div class="section-title">Bank & Account Details</div>
+  <div class="section-title d-flex justify-content-between">
+      <span>PO Items (Item-wise)</span>
+      <button type="button" class="btn btn-sm btn-primary" id="addItemRow">
+          <i class="fa fa-plus"></i> Add Item
+      </button>
+  </div>
 
-    <div class="row g-3">
-        <div class="col-md-3">
-            <label>PAN Number</label>
-            <input name="PanNumber" class="form-control">
-        </div>
-
-        <div class="col-md-3">
-            <label>PFMS Unique Number</label>
-            <input name="PFMSNumber" class="form-control">
-        </div>
-
-        <div class="col-md-3">
-            <label>Bank Name</label>
-            <input name="BankName" class="form-control">
-        </div>
-
-        <div class="col-md-3">
-            <label>IFSC</label>
-            <input name="IFSC" class="form-control">
-        </div>
-
-        <div class="col-md-3">
-            <label>Account Number</label>
-            <input name="AccountNumber" class="form-control">
-        </div>
-    </div>
+  <div class="table-responsive">
+      <table class="table table-bordered" id="poItemTable">
+          <thead class="table-light">
+              <tr>
+                <th>Item Name</th>
+                <th>Amount</th>
+                <th>GST %</th>
+                <th>GST Amt</th>
+                <th>IT %</th>
+                <th>IT Amt</th>
+                <th>Net</th>
+                <th>Action</th>
+              </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot class="table-light fw-bold">
+              <tr>
+                <td class="text-end">TOTAL</td>
+                <td id="po_total_base">0.00</td>
+                <td></td>
+                <td id="po_total_gst">0.00</td>
+                <td></td>
+                <td id="po_total_it">0.00</td>
+                <td id="po_total_net">0.00</td>
+                <td></td>
+              </tr>
+          </tfoot>
+      </table>
+  </div>
 </div>
+
+<!-- ================= BANK DETAILS ================= -->
+<div class="section-card">
+  <div class="section-title">Bank & Account Details</div>
+
+  <div class="row g-3">
+      <div class="col-md-3">
+          <label>PAN Number</label>
+          <input name="PanNumber" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+          <label>PFMS Unique Number</label>
+          <input name="PFMSNumber" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+          <label>Bank Name</label>
+          <input name="BankName" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+          <label>IFSC</label>
+          <input name="IFSC" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+          <label>Account Number</label>
+          <input name="AccountNumber" class="form-control">
+      </div>
+  </div>
+</div>
+
 <!-- ================= SANCTION SECTION ================= -->
 <div class="section-card">
-<div class="section-title d-flex justify-content-between">
-    <span>Sanction Orders</span>
-    <button type="button" class="btn btn-sm btn-primary" id="addRow">
-        <i class="fa fa-plus"></i> Add Sanction
-    </button>
-</div>
+  <div class="section-title d-flex justify-content-between align-items-center">
+      <span>Sanction Orders</span>
+      <button type="button" class="btn btn-sm btn-primary" id="addSanRow">
+          <i class="fa fa-plus"></i> Add Sanction
+      </button>
+  </div>
 
-<div class="table-responsive">
-<table class="table table-bordered" id="sanctionTable">
-<thead class="table-light">
-<tr>
-    <th>Sanction No</th>
-    <th>Date</th>
-    <th>Amount</th>
-    <th>GST %</th>
-    <th>GST Amt</th>
-    <th>IT %</th>
-    <th>IT Amt</th>
-    <th>Net</th>
-    <th>Action</th>
-</tr>
-</thead>
-<tbody></tbody>
-<tfoot class="table-light fw-bold">
-<tr>
-    <td colspan="4" class="text-end">TOTAL</td>
-    <td id="total_gst">0.00</td>
-    <td></td>
-    <td id="total_it">0.00</td>
-    <td id="total_net">0.00</td>
-    <td></td>
-</tr>
-</tfoot>
-</table>
-</div>
+  <!-- ✅ Remaining Balance display in sanction section -->
+  <div class="row mb-2">
+    <div class="col-md-12 text-end">
+      <span class="fw-bold text-secondary me-2">Remaining Balance:</span>
+      <span id="san_remaining_balance" class="fw-bold text-danger">0.00</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered" id="sanctionTable">
+      <thead class="table-light">
+        <tr>
+          <th>Sanction No</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td colspan="2" class="text-end">TOTAL</td>
+          <td id="san_total_amt">0.00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
 </div>
 
 <div class="text-end">
@@ -171,167 +201,200 @@ small{color:#198754;font-weight:600;}
 <script>
 function percentCalc(base,p){ return (base*p/100)||0; }
 
-/* ================= PO CALC ================= */
-function calcPO(){
- let a=+$('#po_amount').val()||0;
- let gst=percentCalc(a,+$('#po_gst_p').val());
- let it=percentCalc(a,+$('#po_it_p').val());
+/* ================= PO ITEMS ================= */
+function addItemRow(){
+  let row = `
+  <tr>
+    <td><input name="ItemName[]" class="form-control" required></td>
+    <td><input type="number" step="0.01" name="ItemAmount[]" class="form-control iamt" value="0"></td>
+    <td><input type="number" step="0.01" max="100" name="ItemGSTPercent[]" class="form-control igstp" value="0"></td>
+    <td class="igsta text-success fw-bold">0.00</td>
+    <td><input type="number" step="0.01" max="100" name="ItemITPercent[]" class="form-control iitp" value="0"></td>
+    <td class="iita text-success fw-bold">0.00</td>
+    <td class="inet fw-bold">0.00</td>
+    <td><button type="button" class="btn btn-sm btn-danger removeItem">X</button></td>
+  </tr>`;
+  $('#poItemTable tbody').append(row);
+  calcPOItems();
+}
 
- $('#po_gst_amt').text('GST : '+gst.toFixed(2));
- $('#po_it_amt').text('IT : '+it.toFixed(2));
- $('#po_net_total').val((a+gst+it).toFixed(2));
+function calcPOItems(){
+  let totalBase = 0, totalGST = 0, totalIT = 0, totalNet = 0;
 
- $('.sgstp').val($('#po_gst_p').val());
- $('.sitp').val($('#po_it_p').val());
+  $('#poItemTable tbody tr').each(function(){
+    let amt = parseFloat($(this).find('input.iamt').val()) || 0;
+    let gp  = parseFloat($(this).find('input.igstp').val()) || 0;
+    let ip  = parseFloat($(this).find('input.iitp').val()) || 0;
 
- calcSanction();
+    let gst = percentCalc(amt, gp);
+    let it  = percentCalc(amt, ip);
+    let net = amt + gst + it;
+
+    $(this).find('td.igsta').text(gst.toFixed(2));
+    $(this).find('td.iita').text(it.toFixed(2));
+    $(this).find('td.inet').text(net.toFixed(2));
+
+    totalBase += amt;
+    totalGST  += gst;
+    totalIT   += it;
+    totalNet  += net;
+  });
+
+  $('#po_total_base').text(totalBase.toFixed(2));
+  $('#po_total_gst').text(totalGST.toFixed(2));
+  $('#po_total_it').text(totalIT.toFixed(2));
+  $('#po_total_net').text(totalNet.toFixed(2));
+
+  $('#po_amount').val(totalBase.toFixed(2));
+  $('#po_net_total').val(totalNet.toFixed(2));
+
+  calcSanction();
 }
 
 /* ================= SANCTION ================= */
-function addRow(){
- let row = `
- <tr>
-  <td><input name="SanctionNo[]" class="form-control" required></td>
-  <td><input type="date" name="SanctionDate[]" class="form-control" required></td>
-  <td><input type="number" step="0.01" name="SanctionAmount[]" class="form-control samt"></td>
-  <td><input readonly class="form-control sgstp"></td>
-  <td class="sgsta text-success fw-bold"></td>
-  <td><input readonly class="form-control sitp"></td>
-  <td class="sita text-success fw-bold"></td>
-  <td class="snet fw-bold"></td>
-  <td><button type="button" class="btn btn-sm btn-danger remove">X</button></td>
- </tr>`;
- $('#sanctionTable tbody').append(row);
- calcPO();
+function addSanRow(){
+  let row = `
+  <tr>
+    <td><input name="SanctionNo[]" class="form-control" required></td>
+    <td><input type="date" name="SanctionDate[]" class="form-control" required></td>
+    <td><input type="number" step="0.01" name="SanctionAmount[]" class="form-control samt" value="0"></td>
+    <td><button type="button" class="btn btn-sm btn-danger removeSan">X</button></td>
+  </tr>`;
+  $('#sanctionTable tbody').append(row);
+  calcSanction();
 }
 
 function calcSanction(){
-    let totalAmount = 0;
-    let totalGST = 0;
-    let totalIT = 0;
-    let totalNet = 0;
+  let totalSanctionNet = 0;
 
-    $('#sanctionTable tbody tr').each(function(){
-        let amt = +$(this).find('.samt').val() || 0;
-        let gp  = +$('#po_gst_p').val() || 0;
-        let ip  = +$('#po_it_p').val() || 0;
+  $('#sanctionTable tbody tr').each(function(){
+    let amt = parseFloat($(this).find('input.samt').val()) || 0;
+    totalSanctionNet += amt; // since sanction net = amount (no GST/IT in sanction)
+  });
 
-        let gst = percentCalc(amt, gp);
-        let it  = percentCalc(amt, ip);
-        let net = amt + gst + it;
+  $('#san_total_amt').text(totalSanctionNet.toFixed(2));
 
-        $(this).find('.sgsta').text(gst.toFixed(2));
-        $(this).find('.sita').text(it.toFixed(2));
-        $(this).find('.snet').text(net.toFixed(2));
+  // ✅ Compare with PO NET total (calculated from itemwise net)
+  let poNet = parseFloat($('#po_net_total').val()) || 0;
+  let bal = poNet - totalSanctionNet;
 
-        totalAmount += amt;
-        totalGST += gst;
-        totalIT += it;
-        totalNet += net;
-    });
-
-    // ✅ Update footer totals
-    $('#total_gst').text(totalGST.toFixed(2));
-    $('#total_it').text(totalIT.toFixed(2));
-    $('#total_net').text(totalNet.toFixed(2));
-
-    // Remaining balance logic
-    let po = +$('#po_amount').val() || 0;
-    let bal = po - totalAmount;
-    $('#remaining_balance').val(bal.toFixed(2));
-
-    if(totalAmount > po){
-        Swal.fire('Error','Total Sanction Amount exceeds PO Amount','error');
-        $('button[type="submit"]').prop('disabled', true);
-    } else {
-        $('button[type="submit"]').prop('disabled', false);
-    }
+  $('#remaining_balance').val(bal.toFixed(2));
+$('#san_remaining_balance').text(bal.toFixed(2));
+  if(totalSanctionNet > poNet){
+    Swal.fire('Error','Total Sanction Amount exceeds PO Net Total (Item-wise Net)','error');
+    $('button[type="submit"]').prop('disabled', true);
+  } else {
+    $('button[type="submit"]').prop('disabled', false);
+  }
 }
 
+
 /* ================= EVENTS ================= */
-$('#po_amount,#po_gst_p,#po_it_p').on('input',calcPO);
-$('#addRow').click(addRow);
-$(document).on('input','.samt',calcSanction);
-$(document).on('click','.remove',function(){
-    $(this).closest('tr').remove();
-    calcSanction();
+$('#addItemRow').on('click', addItemRow);
+
+// delegated events for dynamic rows
+$(document).on('input', '#poItemTable .iamt, #poItemTable .igstp, #poItemTable .iitp', calcPOItems);
+$(document).on('click', '.removeItem', function(){
+  $(this).closest('tr').remove();
+  calcPOItems();
+});
+
+$('#addSanRow').on('click', addSanRow);
+$(document).on('input', '#sanctionTable .samt', calcSanction);
+$(document).on('click', '.removeSan', function(){
+  $(this).closest('tr').remove();
+  calcSanction();
 });
 
 // Check PO Number duplicate
 $('input[name="PONumber"]').on('blur', function(){
-    let poNum = $(this).val().trim();
-    if(poNum==='') return;
+  let poNum = $(this).val().trim();
+  if(poNum==='') return;
 
-    $.get('check_duplicate.php', { type:'po', value: poNum }, function(res){
-        if(res.duplicate){
-            Swal.fire('Duplicate','PO Number already exists!','warning');
-            $('input[name="PONumber"]').val('').focus();
-        }
-    },'json');
+  $.get('check_duplicate.php', { type:'po', value: poNum }, function(res){
+    if(res.duplicate){
+      Swal.fire('Duplicate','PO Number already exists!','warning');
+      $('input[name="PONumber"]').val('').focus();
+    }
+  },'json');
 });
 
-// Check Sanction Number duplicate (for all dynamic rows)
+// Check Sanction Number duplicate
 $(document).on('blur','input[name="SanctionNo[]"]', function(){
-    let sanNo = $(this).val().trim();
-    if(sanNo==='') return;
+  let sanNo = $(this).val().trim();
+  if(sanNo==='') return;
 
-    $.get('check_duplicate.php', { type:'sanction', value: sanNo }, function(res){
-        if(res.duplicate){
-            Swal.fire('Duplicate','Sanction Number already exists!','warning');
-            $(this).val('').focus();
-        }
-    }.bind(this),'json'); // bind `this` to keep reference
+  $.get('check_duplicate.php', { type:'sanction', value: sanNo }, function(res){
+    if(res.duplicate){
+      Swal.fire('Duplicate','Sanction Number already exists!','warning');
+      $(this).val('').focus();
+    }
+  }.bind(this),'json');
 });
 
 /* ================= SUBMIT ================= */
 $('#poForm').submit(function(e){
- e.preventDefault();
+  e.preventDefault();
 
- let po = +$('#po_amount').val()||0;
- let total=0;
- $('.samt').each(function(){ total+=+$(this).val()||0; });
+  let poNet = parseFloat($('#po_net_total').val()) || 0;
 
- if(total > po){
-    Swal.fire('Error','Total Sanction Amount exceeds PO Amount','error');
+  if(poNet <= 0){
+    Swal.fire('Error','Please add at least one PO item','error');
     return;
- }
+  }
 
- $.ajax({
+  // ✅ calculate total sanction amount
+  let totalSan = 0;
+  $('#sanctionTable .samt').each(function(){
+    totalSan += parseFloat($(this).val()) || 0;
+  });
+
+  // ✅ compare against NET
+  if(totalSan > poNet){
+    Swal.fire(
+      'Error',
+      'Total Sanction Amount exceeds PO Net Total (Item-wise Net)',
+      'error'
+    );
+    return;
+  }
+
+  $.ajax({
     url:'po_sanction_submit.php',
     type:'POST',
     data:$(this).serialize(),
     dataType:'json',
     success:function(res){
-       if(res.status === 'success'){
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Saved!',
-                    text: 'PO & Sanction Orders have been saved successfully.',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    location.reload(); // reload page after clicking OK
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: res.message,
-                    confirmButtonText: 'OK'
-                });
-            }
+      if(res.status === 'success'){
+        Swal.fire({
+          icon: 'success',
+          title: 'Saved!',
+          text: 'PO Items & Sanction Orders have been saved successfully.',
+          confirmButtonText: 'OK'
+        }).then(() => location.reload());
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message,
+          confirmButtonText: 'OK'
+        });
+      }
     },
-        error: function(xhr, status, error){
-            Swal.fire({
-                icon: 'error',
-                title: 'AJAX Error',
-                text: error,
-                confirmButtonText: 'OK'
-            });
-        }
- });
+    error:function(xhr, status, error){
+      Swal.fire({
+        icon: 'error',
+        title: 'AJAX Error',
+        text: error,
+        confirmButtonText: 'OK'
+      });
+    }
+  });
 });
 
-addRow();
+// defaults
+addItemRow();
+addSanRow();
 </script>
 
 </body>
