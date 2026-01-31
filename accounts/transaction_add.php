@@ -14,27 +14,62 @@ if ($stmt->fetchColumn() == 0) die("Unauthorized Access");
 
 /* ================= FETCH BILLS ================= */
 $rows = $conn->query("
-    SELECT 
-        b.Id AS BillId,
-        bi.BillNumber,
-        bi.BillReceivedDate,
-        bi.TotalAmount,
-        im.VendorName,
-        im.InvoiceNo,
-        im.InvoiceDate,
-        im.NetPayable,
-        im.ReceivedFromSection
-    FROM bill_entry b
-    INNER JOIN bill_initial_entry bi ON bi.Id = b.BillInitialId
-    INNER JOIN bill_invoice_map bim ON bim.BillInitialId = bi.Id
-    INNER JOIN invoice_master im ON im.Id = bim.InvoiceId
-    INNER JOIN bill_process p ON p.BillId = bi.Id AND p.Status='Pass'
-    WHERE b.Status='Pass'
-      AND NOT EXISTS (
-        SELECT 1 FROM bill_transactions t WHERE t.BillId=b.Id
-      )
-    ORDER BY b.CreatedDate DESC
+WITH LatestEntry AS (
+    SELECT
+        be.*,
+        ROW_NUMBER() OVER (PARTITION BY be.BillInitialId ORDER BY be.Id DESC) AS rn
+    FROM bill_entry be
+),
+InvoiceAgg AS (
+    SELECT
+        bim.BillInitialId,
+        COUNT(*) AS InvoiceCount,
+        MAX(im.VendorName) AS VendorName,
+        MAX(im.ReceivedFromSection) AS ReceivedFromSection,
+        STRING_AGG(im.InvoiceNo, ', ') AS InvoiceNos,
+        MAX(im.InvoiceDate) AS LastInvoiceDate,
+        SUM(ISNULL(im.TotalAmount,0)) AS TotalAmount,
+        SUM(ISNULL(im.NetPayable,0))  AS TotalNetPayable
+    FROM bill_invoice_map bim
+    JOIN invoice_master im ON im.Id = bim.InvoiceId
+    GROUP BY bim.BillInitialId
+)
+SELECT
+    le.Id AS BillId,                 -- bill_entry Id (latest)
+    bi.Id AS BillInitialId,          -- bill_initial_entry Id
+    bi.BillNumber,
+    bi.BillReceivedDate,
+
+    ia.InvoiceCount,
+    ia.InvoiceNos,
+    ia.LastInvoiceDate,
+    ia.VendorName,
+    ia.ReceivedFromSection,
+
+    ia.TotalAmount,
+    ia.TotalNetPayable
+
+FROM bill_initial_entry bi
+JOIN LatestEntry le
+    ON le.BillInitialId = bi.Id AND le.rn = 1
+JOIN InvoiceAgg ia
+    ON ia.BillInitialId = bi.Id
+
+WHERE le.Status = 'Pass'
+  AND EXISTS (
+        SELECT 1
+        FROM bill_process p
+        WHERE p.BillId = bi.Id
+          AND p.Status = 'Pass'
+  )
+  AND NOT EXISTS (
+        SELECT 1
+        FROM bill_transactions t
+        WHERE t.BillId = le.Id
+  )
+ORDER BY le.CreatedDate DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -53,7 +88,7 @@ body { margin: 0; min-height: 100vh; background-color: #f8f9fa; }
 .topbar-fixed { position: fixed; top: 0; width: 100%; z-index: 1030; }
 .sidebar-fixed { position: fixed; top: 70px; bottom: 0; width: 240px; overflow-y: auto; background-color: #343a40; }
 .page-content { margin-left: 240px; padding: 100px 20px 20px 20px; }
-.table-responsive { max-width: 1000px; margin: auto; }
+.table-responsive {  margin: auto; }
 
 .page-content{margin-left:240px;padding:90px 20px}
 .table thead th{vertical-align:middle;text-align:center}
@@ -90,39 +125,60 @@ tfoot td{font-weight:700;background:#f1f3f5}
     <th>Bill No</th>
     <th>Bill Date</th>
     <th>Vendor</th>
-    <th>Invoice No</th>
-    <th>Invoice Date</th>
+    <th>Invoice Count</th>
+    <th>Invoice Nos</th>
+    <th>Last Invoice Date</th>
     <th>Section</th>
     <th>Bill Amount</th>
     <th>Net Payable</th>
+    <th>History</th>
 </tr>
 </thead>
-
 <tbody>
 <?php foreach($rows as $r): ?>
-<tr data-amount="<?= $r['NetPayable'] ?>">
+<tr data-amount="<?= $r['TotalNetPayable'] ?>">
     <td>
-        <input type="checkbox" class="bill-check" value="<?= $r['BillId'] ?>">
+        <!-- IMPORTANT: value should be BillId (bill_entry.Id) because batch insert uses bill_transactions.BillId -->
+        <input type="checkbox" class="bill-check" value="<?= (int)$r['BillId'] ?>">
     </td>
-    <td><?= htmlspecialchars($r['BillNumber']) ?></td>
-    <td><?= $r['BillReceivedDate'] ?></td>
-    <td><?= htmlspecialchars($r['VendorName']) ?></td>
-    <td><?= htmlspecialchars($r['InvoiceNo']) ?></td>
-    <td><?= $r['InvoiceDate'] ?></td>
+
+    <td class="fw-semibold"><?= htmlspecialchars($r['BillNumber']) ?></td>
+    <td><?= !empty($r['BillReceivedDate']) ? date('d-m-Y', strtotime($r['BillReceivedDate'])) : '-' ?></td>
+
+    <td><?= htmlspecialchars($r['VendorName'] ?? '-') ?></td>
+
+    <td><?= (int)($r['InvoiceCount'] ?? 0) ?></td>
+
+    <td style="min-width:220px;">
+        <?= htmlspecialchars($r['InvoiceNos'] ?? '-') ?>
+    </td>
+
+    <td><?= !empty($r['LastInvoiceDate']) ? date('d-m-Y', strtotime($r['LastInvoiceDate'])) : '-' ?></td>
+
     <td>
         <span class="badge badge-section">
-            <?= htmlspecialchars($r['ReceivedFromSection']) ?>
+            <?= htmlspecialchars($r['ReceivedFromSection'] ?? '-') ?>
         </span>
     </td>
-    <td class="amount"><?= number_format($r['TotalAmount'],2) ?></td>
-    <td class="amount text-success"><?= number_format($r['NetPayable'],2) ?></td>
+
+    <td class="amount"><?= number_format($r['TotalAmount'] ?? 0, 2) ?></td>
+    <td class="amount text-success"><?= number_format($r['TotalNetPayable'] ?? 0, 2) ?></td>
+
+    <td>
+        <a class="btn btn-sm btn-outline-dark"
+           href="../receiving/bill_history.php?id=<?= (int)$r['BillInitialId'] ?>"
+           target="_blank">
+            View
+        </a>
+    </td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 
+
 <tfoot>
 <tr>
-    <td colspan="8" class="text-end">Selected Net Total</td>
+    <td colspan="10" class="text-end">Selected Net Total</td>
     <td class="text-success amount" id="selectedTotal">0.00</td>
 </tr>
 </tfoot>
@@ -172,10 +228,10 @@ $(function(){
 
     $('#createBatch').click(function(){
 
-        let bills = $('.bill-check:checked').map(function(){
-            return this.value;
-        }).get();
-
+  let bills = [];
+table.rows().nodes().to$().find('.bill-check:checked').each(function(){
+    bills.push(this.value);
+});
         if(bills.length === 0){
             Swal.fire('Warning','Please select at least one bill','warning');
             return;

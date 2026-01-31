@@ -79,6 +79,10 @@ $batches = $conn->query("
            class="btn btn-sm btn-primary">
            <i class="fa fa-eye"></i> View Bills
         </a>
+        <a href="transaction_batch_full_view.php?batch=<?= urlencode($b['BatchNo']) ?>&voucher=<?= urlencode($b['VoucherNo']) ?>"
+   class="btn btn-sm btn-primary">
+   <i class="fa fa-eye"></i> Full Bill View
+</a>
     </td>
 </tr>
 <?php endforeach; ?>
